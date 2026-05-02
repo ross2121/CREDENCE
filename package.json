@@ -15,6 +15,8 @@
     "api:dev": "npm --prefix api run dev",
     "api:build": "npm --prefix api run build",
     "api:typecheck": "npm --prefix api run typecheck",
+    "qvac:smoke": "npx ts-node scripts/qvac-smoke.ts",
+    "qvac:serve": "npx qvac serve openai --config qvac.config.json --port 11434",
     "zk:fixtures": "npx ts-node scripts/zk/credit-fixtures.ts",
     "zk:prove": "npx ts-node scripts/zk/generate-proof.ts",
     "zk:export-verifier": "npx ts-node scripts/zk/export-verifier.ts",
@@ -43,5 +45,9 @@
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
+  },
+  "optionalDependencies": {
+    "@qvac/cli": "^0.2.4",
+    "@qvac/sdk": "^0.9.2"
   }
 }

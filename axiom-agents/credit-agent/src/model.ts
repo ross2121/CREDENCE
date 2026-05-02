@@ -1,5 +1,9 @@
 import { CreditDecision, CreditFeatures, CreditTier } from "./types";
 
+export type CreditModel = {
+  decide(features: CreditFeatures): CreditDecision | Promise<CreditDecision>;
+};
+
 export const TIER_CONFIG: Record<
   CreditTier,
   {
@@ -35,7 +39,7 @@ export const TIER_CONFIG: Record<
   },
 };
 
-export class LocalCreditModel {
+export class LocalCreditModel implements CreditModel {
   score(features: CreditFeatures): number {
     const raw =
       300 +

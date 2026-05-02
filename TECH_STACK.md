@@ -33,11 +33,13 @@ Program: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA
 ### QVAC Integration
 ```bash
 # Install QVAC SDK
-npm install @tether/qvac-sdk
+npm install @qvac/sdk @qvac/cli
 
 # Or Python
 pip install qvac
 ```
+
+AXIOM keeps QVAC inference optional for demo reliability. By default, tests use deterministic local fallback models. Set `AXIOM_QVAC_ENABLED=true` to route credit/yield decisions through `@qvac/sdk`; set `AXIOM_QVAC_REQUIRED=true` to fail instead of falling back if model loading fails.
 
 ---
 

@@ -1,12 +1,23 @@
 import { AxiomClient } from "../../../sdk/src";
 import { AllocationDecision, IkaRebalancePolicy, PoolSnapshot } from "./types";
 import { YieldStrategy } from "./strategy";
+import { QvacYieldStrategy } from "./qvac-strategy";
 
 export class YieldAgent {
-  constructor(readonly strategy = new YieldStrategy()) {}
+  constructor(
+    readonly strategy = new YieldStrategy(),
+    readonly qvacStrategy = QvacYieldStrategy.fromEnv()
+  ) {}
 
   decide(pool: PoolSnapshot, market: Parameters<YieldStrategy["decide"]>[1]) {
     return this.strategy.decide(pool, market);
+  }
+
+  async decideWithQvac(
+    pool: PoolSnapshot,
+    market: Parameters<YieldStrategy["decide"]>[1]
+  ) {
+    return this.qvacStrategy.decide(pool, market);
   }
 
   buildRebalanceTransactions(

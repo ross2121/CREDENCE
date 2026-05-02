@@ -4,6 +4,7 @@
 
 ```bash
 npm run demo:e2e
+npm run qvac:smoke
 npm run app:dev
 npm run api:build
 API_PORT=8080 node api/dist/server.js

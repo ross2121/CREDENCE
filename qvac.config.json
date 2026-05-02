@@ -1,0 +1,24 @@
+{
+  "plugins": [
+    "@qvac/sdk/llamacpp-completion/plugin"
+  ],
+  "serve": {
+    "models": {
+      "axiom-credit": {
+        "model": "QWEN3_600M_INST_Q4",
+        "default": true,
+        "preload": false,
+        "config": {
+          "ctx_size": 4096
+        }
+      },
+      "axiom-yield": {
+        "model": "QWEN3_600M_INST_Q4",
+        "preload": false,
+        "config": {
+          "ctx_size": 4096
+        }
+      }
+    }
+  }
+}

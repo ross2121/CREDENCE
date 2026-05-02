@@ -3,7 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 import { AxiomClient } from "../../../sdk/src";
 import { buildFeatureVector } from "./feature-engineering";
 import { GoldRushFetcher } from "./goldrush-fetcher";
-import { LocalCreditModel } from "./model";
+import { CreditModel, LocalCreditModel } from "./model";
 import { CreditDecision, GeneratedCreditProof, WalletHistory } from "./types";
 import { ZkProofGenerator } from "./zk-proof-generator";
 
@@ -12,7 +12,7 @@ export class CreditAgent {
     readonly fetcher = new GoldRushFetcher({
       apiKey: process.env.GOLDRUSH_API_KEY,
     }),
-    readonly model = new LocalCreditModel(),
+    readonly model: CreditModel = new LocalCreditModel(),
     readonly proofGenerator = new ZkProofGenerator()
   ) {}
 
@@ -20,7 +20,7 @@ export class CreditAgent {
     const walletHistory =
       history ?? (await this.fetcher.fetchWalletHistory(wallet));
     const features = buildFeatureVector(walletHistory);
-    const decision = this.model.decide(features);
+    const decision = await this.model.decide(features);
     const proof = this.proofGenerator.generate({
       wallet,
       decision,
