@@ -1,0 +1,7 @@
+{
+  "signature": "5mPrQ3GdHL9Z5Q5Xn6wQy4Qo4Q2qN6X3s7Yd2aK9eU7F",
+  "slot": 123456,
+  "logs": [
+    "Program log: LiquidationWarning loan=11111111111111111111111111111111 borrower=11111111111111111111111111111111 collateral_value_usd=900 debt_usdt=850"
+  ]
+}

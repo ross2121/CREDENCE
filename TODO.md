@@ -213,11 +213,11 @@
 
 ### 6.5 QuickNode
 
-- [ ] Add QuickNode RPC and WebSocket config.
-- [ ] Implement program event listener.
-- [ ] Implement liquidation warning listener.
-- [ ] Add transaction simulation helper.
-- [ ] Commit: `feat(integration): add quicknode realtime rpc`
+- [x] Add QuickNode RPC and WebSocket config.
+- [x] Implement program event listener.
+- [x] Implement liquidation warning listener.
+- [x] Add transaction simulation helper.
+- [x] Commit: `feat(integration): add quicknode realtime rpc`
 
 ### 6.6 Torque MCP
 
