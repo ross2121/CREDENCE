@@ -186,12 +186,12 @@
 
 ### 6.2 Ika
 
-- [ ] Add Ika SDK client.
-- [ ] Create borrower dWallet policy.
-- [ ] Create lender dWallet policy.
-- [ ] Build policy-enforced signing helper.
-- [ ] Add unauthorized destination demo.
-- [ ] Commit: `feat(integration): add ika dwallet policies`
+- [x] Add Ika SDK client.
+- [x] Create borrower dWallet policy.
+- [x] Create lender dWallet policy.
+- [x] Build policy-enforced signing helper.
+- [x] Add unauthorized destination demo.
+- [x] Commit: `feat(integration): add ika dwallet policies`
 
 ### 6.3 Kamino
 

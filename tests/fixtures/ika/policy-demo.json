@@ -1,0 +1,5 @@
+{
+  "maxTransactionAmount": 1000,
+  "originChain": "solana",
+  "repaymentAmount": 400
+}
