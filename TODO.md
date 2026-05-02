@@ -11,12 +11,12 @@
 
 ### 1.1 Project Scaffold
 
-- [ ] Initialize Anchor workspace.
-- [ ] Create `programs/axiom/src` module layout.
-- [ ] Add base dependencies: `anchor-lang`, `anchor-spl`, SPL token helpers.
-- [ ] Add placeholder program id and localnet config.
-- [ ] Add TypeScript Anchor test harness.
-- [ ] Commit: `feat(contract): scaffold axiom anchor program`
+- [x] Initialize Anchor workspace.
+- [x] Create `programs/axiom/src` module layout.
+- [x] Add base dependencies: `anchor-lang`, `anchor-spl`, SPL token helpers.
+- [x] Add placeholder program id and localnet config.
+- [x] Add TypeScript Anchor test harness.
+- [x] Commit: `feat(contract): scaffold axiom anchor program`
 
 ### 1.2 Core State Accounts
 
