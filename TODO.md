@@ -309,10 +309,10 @@
 - [ ] Record 2-minute borrower loan demo.
 - [ ] Record lender yield optimization demo.
 - [ ] Record Ika policy-block demo.
-- [ ] Prepare Tether/QVAC submission copy.
-- [ ] Prepare Ika submission copy.
-- [ ] Prepare Eitherway submission copy.
-- [ ] Prepare Torque submission copy.
-- [ ] Prepare GoldRush submission copy.
-- [ ] Prepare Colosseum main submission copy.
-- [ ] Commit: `docs(submission): add hackathon package`
+- [x] Prepare Tether/QVAC submission copy.
+- [x] Prepare Ika submission copy.
+- [x] Prepare Eitherway submission copy.
+- [x] Prepare Torque submission copy.
+- [x] Prepare GoldRush submission copy.
+- [x] Prepare Colosseum main submission copy.
+- [x] Commit: `docs(submission): add hackathon package`
