@@ -1,0 +1,19 @@
+{
+  "campaigns": {
+    "lenderIncentive": {
+      "campaignId": "torque-lender-boost",
+      "status": "created",
+      "prompt": ""
+    },
+    "borrowerReferral": {
+      "campaignId": "torque-borrower-referral",
+      "status": "created",
+      "prompt": ""
+    },
+    "goodRepayerAirdrop": {
+      "campaignId": "torque-good-repayer-airdrop",
+      "status": "created",
+      "prompt": ""
+    }
+  }
+}

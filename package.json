@@ -16,7 +16,8 @@
     "integration:ika:test": "npx ts-mocha -p ./tsconfig.json -t 1000000 \"tests/ika-integration.ts\"",
     "integration:kamino:test": "npx ts-mocha -p ./tsconfig.json -t 1000000 \"tests/kamino-integration.ts\"",
     "integration:birdeye:test": "npx ts-mocha -p ./tsconfig.json -t 1000000 \"tests/birdeye-integration.ts\"",
-    "integration:quicknode:test": "npx ts-mocha -p ./tsconfig.json -t 1000000 \"tests/quicknode-integration.ts\""
+    "integration:quicknode:test": "npx ts-mocha -p ./tsconfig.json -t 1000000 \"tests/quicknode-integration.ts\"",
+    "integration:torque:test": "npx ts-mocha -p ./tsconfig.json -t 1000000 \"tests/torque-integration.ts\""
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1"

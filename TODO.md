@@ -221,12 +221,12 @@
 
 ### 6.6 Torque MCP
 
-- [ ] Add Torque MCP client.
-- [ ] Create lender incentive campaign flow.
-- [ ] Create borrower referral campaign flow.
-- [ ] Create good-repayer airdrop flow.
-- [ ] Gate campaigns by utilization and repayment metrics.
-- [ ] Commit: `feat(integration): add torque mcp campaigns`
+- [x] Add Torque MCP client.
+- [x] Create lender incentive campaign flow.
+- [x] Create borrower referral campaign flow.
+- [x] Create good-repayer airdrop flow.
+- [x] Gate campaigns by utilization and repayment metrics.
+- [x] Commit: `feat(integration): add torque mcp campaigns`
 
 ## 7. Frontend App
 
