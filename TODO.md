@@ -60,14 +60,14 @@
 
 ### 1.6 Repayment Streaming
 
-- [ ] Implement repayment stream initialization.
-- [ ] Compute stream rate from principal, APY, and duration.
-- [ ] Implement stream funding.
-- [ ] Implement accrued repayment claiming.
-- [ ] Implement stream close on full repayment.
-- [ ] Update loan status and amount repaid.
-- [ ] Add tests for accrual over time, underfunded streams, claim, and close.
-- [ ] Commit: `feat(contract): implement repayment streams`
+- [x] Implement repayment stream initialization.
+- [x] Compute stream rate from principal, APY, and duration.
+- [x] Implement stream funding.
+- [x] Implement accrued repayment claiming.
+- [x] Implement stream close on full repayment.
+- [x] Update loan status and amount repaid.
+- [x] Add tests for accrual over time, underfunded streams, claim, and close.
+- [x] Commit: `feat(contract): implement repayment streams`
 
 ### 1.7 Reputation System
 

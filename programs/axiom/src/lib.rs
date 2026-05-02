@@ -69,4 +69,20 @@ pub mod axiom {
             ika_dwallet,
         )
     }
+
+    pub fn init_repayment_stream(ctx: Context<InitRepayStream>) -> Result<()> {
+        instructions::stream_repay_ix::handle_init_repayment_stream(ctx)
+    }
+
+    pub fn fund_repayment_stream(ctx: Context<FundStream>, amount: u64) -> Result<()> {
+        instructions::stream_repay_ix::handle_fund_repayment_stream(ctx, amount)
+    }
+
+    pub fn claim_repayments(ctx: Context<ClaimRepayments>) -> Result<()> {
+        instructions::stream_repay_ix::handle_claim_repayments(ctx)
+    }
+
+    pub fn close_repayment_stream(ctx: Context<CloseStream>) -> Result<()> {
+        instructions::stream_repay_ix::handle_close_repayment_stream(ctx)
+    }
 }

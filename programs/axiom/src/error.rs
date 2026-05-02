@@ -32,4 +32,10 @@ pub enum AxiomError {
     InvalidCreditProof,
     #[msg("Invalid ZK public inputs")]
     InvalidPublicInputs,
+    #[msg("Nothing is available to claim")]
+    NothingToClaim,
+    #[msg("Repayment stream is already fully repaid")]
+    StreamAlreadyRepaid,
+    #[msg("Repayment stream is not fully repaid")]
+    StreamNotRepaid,
 }

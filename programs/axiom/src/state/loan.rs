@@ -63,6 +63,32 @@ impl Loan {
 
         Ok(())
     }
+
+    pub fn apply_repayment(&mut self, amount: u64, now: i64) -> Result<()> {
+        require!(amount > 0, AxiomError::InvalidAmount);
+        require!(
+            self.status == LoanStatus::Active,
+            AxiomError::InvalidLoanStatus
+        );
+
+        self.amount_repaid = self
+            .amount_repaid
+            .checked_add(amount)
+            .ok_or(error!(AxiomError::MathOverflow))?;
+        self.last_repay_time = now;
+
+        Ok(())
+    }
+
+    pub fn mark_repaid(&mut self, now: i64) -> Result<()> {
+        require!(
+            self.status == LoanStatus::Active,
+            AxiomError::InvalidLoanStatus
+        );
+        self.status = LoanStatus::Repaid;
+        self.last_repay_time = now;
+        Ok(())
+    }
 }
 
 pub struct LoanRequestArgs {
