@@ -195,12 +195,12 @@
 
 ### 6.3 Kamino
 
-- [ ] Add Kamino SDK client.
-- [ ] Resolve USDT vault.
-- [ ] Implement deposit and withdrawal helpers.
-- [ ] Implement APY fetcher.
-- [ ] Add mocked fallback for demo reliability.
-- [ ] Commit: `feat(integration): add kamino yield routing`
+- [x] Add Kamino SDK client.
+- [x] Resolve USDT vault.
+- [x] Implement deposit and withdrawal helpers.
+- [x] Implement APY fetcher.
+- [x] Add mocked fallback for demo reliability.
+- [x] Commit: `feat(integration): add kamino yield routing`
 
 ### 6.4 Birdeye
 
