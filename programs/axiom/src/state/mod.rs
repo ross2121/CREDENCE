@@ -1,4 +1,5 @@
 pub mod credit_proof;
+pub mod dispute;
 pub mod ika_policy;
 pub mod lending_pool;
 pub mod liquidation;
@@ -7,6 +8,7 @@ pub mod repayment_stream;
 pub mod reputation;
 
 pub use credit_proof::*;
+pub use dispute::*;
 pub use ika_policy::*;
 pub use lending_pool::*;
 pub use liquidation::*;
@@ -24,6 +26,8 @@ mod tests {
         assert_eq!(LendingPool::LEN, 153);
         assert_eq!(Loan::LEN, 171);
         assert_eq!(CreditProof::LEN, 98);
+        assert_eq!(Dispute::LEN, 291);
+        assert_eq!(Arbitrator::LEN, 54);
         assert_eq!(IkaPolicy::LEN, 197);
         assert_eq!(LiquidationState::LEN, 82);
         assert_eq!(ReputationAccount::LEN, 125);

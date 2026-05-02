@@ -110,13 +110,13 @@
 
 ### 1.11 Disputes and Arbitration
 
-- [ ] Implement dispute account.
-- [ ] Implement dispute opening with evidence hash.
-- [ ] Implement arbitrator registration and stake requirement.
-- [ ] Implement arbitration vote submission.
-- [ ] Implement dispute finalization.
-- [ ] Add tests for opening, voting thresholds, finalization, and stake behavior.
-- [ ] Commit: `feat(contract): implement dispute arbitration`
+- [x] Implement dispute account.
+- [x] Implement dispute opening with evidence hash.
+- [x] Implement arbitrator registration and stake requirement.
+- [x] Implement arbitration vote submission.
+- [x] Implement dispute finalization.
+- [x] Add tests for opening, voting thresholds, finalization, and stake behavior.
+- [x] Commit: `feat(contract): implement dispute arbitration`
 
 ### 1.12 Contract Hardening
 

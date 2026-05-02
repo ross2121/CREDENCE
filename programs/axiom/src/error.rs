@@ -54,4 +54,14 @@ pub enum AxiomError {
     GracePeriodActive,
     #[msg("Liquidation warning has not been issued")]
     LiquidationNotWarned,
+    #[msg("Arbitrator stake is below requirement")]
+    InsufficientArbitratorStake,
+    #[msg("Arbitrator has already voted on this dispute")]
+    DuplicateArbitrationVote,
+    #[msg("Dispute voting capacity reached")]
+    DisputeVoteCapacityReached,
+    #[msg("Dispute does not have enough votes to finalize")]
+    DisputeQuorumNotReached,
+    #[msg("Dispute is not open")]
+    DisputeNotOpen,
 }

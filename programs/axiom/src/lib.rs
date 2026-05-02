@@ -161,4 +161,28 @@ pub mod axiom {
     ) -> Result<()> {
         instructions::liquidation_ix::handle_execute_liquidation(ctx, recovered_usdt)
     }
+
+    pub fn open_dispute(
+        ctx: Context<OpenDispute>,
+        loan_id: Pubkey,
+        evidence_hash: [u8; 32],
+    ) -> Result<()> {
+        instructions::dispute_ix::handle_open_dispute(ctx, loan_id, evidence_hash)
+    }
+
+    pub fn register_arbitrator(ctx: Context<RegisterArbitrator>) -> Result<()> {
+        instructions::dispute_ix::handle_register_arbitrator(ctx)
+    }
+
+    pub fn submit_arbitration_vote(
+        ctx: Context<ArbitrationVote>,
+        dispute_id: Pubkey,
+        ruling: DisputeRuling,
+    ) -> Result<()> {
+        instructions::dispute_ix::handle_submit_arbitration_vote(ctx, dispute_id, ruling)
+    }
+
+    pub fn finalize_dispute(ctx: Context<FinalizeDispute>, dispute_id: Pubkey) -> Result<()> {
+        instructions::dispute_ix::handle_finalize_dispute(ctx, dispute_id)
+    }
 }
