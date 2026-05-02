@@ -20,13 +20,13 @@
 
 ### 1.2 Core State Accounts
 
-- [ ] Implement `LendingPool` account.
-- [ ] Implement `Loan` account and `LoanStatus`.
-- [ ] Implement `CreditProof` account and `CreditTier`.
-- [ ] Implement `ReputationAccount`.
-- [ ] Add account sizing constants.
-- [ ] Add serialization tests where useful.
-- [ ] Commit: `feat(contract): add core protocol state`
+- [x] Implement `LendingPool` account.
+- [x] Implement `Loan` account and `LoanStatus`.
+- [x] Implement `CreditProof` account and `CreditTier`.
+- [x] Implement `ReputationAccount`.
+- [x] Add account sizing constants.
+- [x] Add serialization tests where useful.
+- [x] Commit: `feat(contract): add core protocol state`
 
 ### 1.3 Lending Pool Instructions
 
