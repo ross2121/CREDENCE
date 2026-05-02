@@ -71,13 +71,13 @@
 
 ### 1.7 Reputation System
 
-- [ ] Implement reputation account initialization.
-- [ ] Implement reputation NFT mint hook or Metaplex Core integration stub.
-- [ ] Implement successful repayment score update.
-- [ ] Implement default/liquidation slash.
-- [ ] Implement USDT reputation bond staking.
-- [ ] Add tests for score changes, counters, and stake accounting.
-- [ ] Commit: `feat(contract): implement reputation accounting`
+- [x] Implement reputation account initialization.
+- [x] Implement reputation NFT mint hook or Metaplex Core integration stub.
+- [x] Implement successful repayment score update.
+- [x] Implement default/liquidation slash.
+- [x] Implement USDT reputation bond staking.
+- [x] Add tests for score changes, counters, and stake accounting.
+- [x] Commit: `feat(contract): implement reputation accounting`
 
 ### 1.8 Ika Policy Checks
 

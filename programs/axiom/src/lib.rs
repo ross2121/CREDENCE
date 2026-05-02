@@ -85,4 +85,20 @@ pub mod axiom {
     pub fn close_repayment_stream(ctx: Context<CloseStream>) -> Result<()> {
         instructions::stream_repay_ix::handle_close_repayment_stream(ctx)
     }
+
+    pub fn mint_reputation_nft(ctx: Context<MintReputation>) -> Result<()> {
+        instructions::reputation_ix::handle_mint_reputation_nft(ctx)
+    }
+
+    pub fn update_reputation_success(ctx: Context<UpdateReputation>) -> Result<()> {
+        instructions::reputation_ix::handle_update_reputation_success(ctx)
+    }
+
+    pub fn slash_reputation(ctx: Context<UpdateReputation>) -> Result<()> {
+        instructions::reputation_ix::handle_slash_reputation(ctx)
+    }
+
+    pub fn stake_reputation_bond(ctx: Context<StakeBond>, amount: u64) -> Result<()> {
+        instructions::reputation_ix::handle_stake_reputation_bond(ctx, amount)
+    }
 }
