@@ -129,13 +129,13 @@
 
 ## 2. ZK Credit Circuit
 
-- [ ] Create `circuits/credit_score.circom`.
-- [ ] Encode tier threshold proof.
-- [ ] Include wallet hash and model hash public inputs.
-- [ ] Add proof generation script with `snarkjs`.
-- [ ] Add verifier artifact export for the Anchor program.
-- [ ] Add sample proof fixtures for Bronze, Silver, Gold, and Platinum.
-- [ ] Commit: `feat(zk): add credit tier proof circuit`
+- [x] Create `circuits/credit_score.circom`.
+- [x] Encode tier threshold proof.
+- [x] Include wallet hash and model hash public inputs.
+- [x] Add proof generation script with `snarkjs`.
+- [x] Add verifier artifact export for the Anchor program.
+- [x] Add sample proof fixtures for Bronze, Silver, Gold, and Platinum.
+- [x] Commit: `feat(zk): add credit tier proof circuit`
 
 ## 3. SDK
 

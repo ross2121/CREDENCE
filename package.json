@@ -4,7 +4,11 @@
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "seed:localnet": "npx ts-node scripts/seed-localnet.ts",
-    "test": "anchor test"
+    "test": "anchor test",
+    "zk:fixtures": "npx ts-node scripts/zk/credit-fixtures.ts",
+    "zk:prove": "npx ts-node scripts/zk/generate-proof.ts",
+    "zk:export-verifier": "npx ts-node scripts/zk/export-verifier.ts",
+    "zk:test": "npm run zk:fixtures && npx ts-mocha -p ./tsconfig.json -t 1000000 \"tests/zk-fixtures.ts\""
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1"
