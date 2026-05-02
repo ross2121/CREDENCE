@@ -150,15 +150,15 @@
 
 ## 4. QVAC Credit Agent
 
-- [ ] Scaffold `axiom-agents/credit-agent`.
-- [ ] Implement GoldRush wallet history fetcher.
-- [ ] Implement feature engineering pipeline.
-- [ ] Implement local credit model wrapper.
-- [ ] Implement tier and max loan calculation.
-- [ ] Implement ZK proof generation call.
-- [ ] Implement loan proof submission through SDK.
-- [ ] Add fixture-based tests for feature extraction and tier output.
-- [ ] Commit: `feat(agent): implement qvac credit agent`
+- [x] Scaffold `axiom-agents/credit-agent`.
+- [x] Implement GoldRush wallet history fetcher.
+- [x] Implement feature engineering pipeline.
+- [x] Implement local credit model wrapper.
+- [x] Implement tier and max loan calculation.
+- [x] Implement ZK proof generation call.
+- [x] Implement loan proof submission through SDK.
+- [x] Add fixture-based tests for feature extraction and tier output.
+- [x] Commit: `feat(agent): implement qvac credit agent`
 
 ## 5. QVAC Yield Agent
 

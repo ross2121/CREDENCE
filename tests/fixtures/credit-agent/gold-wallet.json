@@ -1,0 +1,27 @@
+{
+  "wallet": "gold-wallet",
+  "chains": [
+    {
+      "chain": "solana-mainnet",
+      "firstSeenDaysAgo": 900,
+      "monthlyTransactions": [42, 39, 45, 44, 41, 47, 50, 43, 46, 48, 44, 45],
+      "defiInteractions": 62,
+      "usdtIncoming": 42000,
+      "usdtOutgoing": 31000,
+      "averagePortfolioUsd": 18000,
+      "collateralPositions": 8,
+      "repayments": 3
+    },
+    {
+      "chain": "eth-mainnet",
+      "firstSeenDaysAgo": 1200,
+      "monthlyTransactions": [12, 9, 10, 14, 11, 13],
+      "defiInteractions": 16,
+      "usdtIncoming": 11000,
+      "usdtOutgoing": 9000,
+      "averagePortfolioUsd": 9000,
+      "collateralPositions": 3,
+      "repayments": 1
+    }
+  ]
+}

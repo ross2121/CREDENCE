@@ -9,7 +9,8 @@
     "zk:prove": "npx ts-node scripts/zk/generate-proof.ts",
     "zk:export-verifier": "npx ts-node scripts/zk/export-verifier.ts",
     "zk:test": "npm run zk:fixtures && npx ts-mocha -p ./tsconfig.json -t 1000000 \"tests/zk-fixtures.ts\"",
-    "sdk:test": "npx ts-mocha -p ./tsconfig.json -t 1000000 \"tests/sdk-client.ts\""
+    "sdk:test": "npx ts-mocha -p ./tsconfig.json -t 1000000 \"tests/sdk-client.ts\"",
+    "agent:credit:test": "npx ts-mocha -p ./tsconfig.json -t 1000000 \"tests/credit-agent.ts\""
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1"
