@@ -139,14 +139,14 @@
 
 ## 3. SDK
 
-- [ ] Create TypeScript SDK package.
-- [ ] Add lending pool client helpers.
-- [ ] Add credit proof registration helpers.
-- [ ] Add loan request and repayment stream helpers.
-- [ ] Add Ika policy transaction builders.
-- [ ] Add typed account decoders.
-- [ ] Add SDK unit tests with mocked Anchor provider.
-- [ ] Commit: `feat(sdk): add axiom protocol client`
+- [x] Create TypeScript SDK package.
+- [x] Add lending pool client helpers.
+- [x] Add credit proof registration helpers.
+- [x] Add loan request and repayment stream helpers.
+- [x] Add Ika policy transaction builders.
+- [x] Add typed account decoders.
+- [x] Add SDK unit tests with mocked Anchor provider.
+- [x] Commit: `feat(sdk): add axiom protocol client`
 
 ## 4. QVAC Credit Agent
 
