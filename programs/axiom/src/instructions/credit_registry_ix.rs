@@ -1,7 +1,10 @@
 use anchor_lang::prelude::*;
 use solana_keccak_hasher::hash;
 
-use crate::{verify_credit_proof, AxiomError, CreditProof, CreditTier, Loan, LoanRequestArgs};
+use crate::{
+    verify_credit_proof, AxiomError, CreditProof, CreditProofRegistered, CreditTier, Loan,
+    LoanRequestArgs, LoanRequested,
+};
 
 #[derive(Accounts)]
 pub struct RegisterCreditProof<'info> {
@@ -63,6 +66,13 @@ pub fn handle_register_credit_proof(
     proof.max_loan_usdt = max_loan;
     proof.bump = ctx.bumps.credit_proof;
 
+    emit!(CreditProofRegistered {
+        wallet: proof.wallet,
+        tier,
+        max_loan_usdt: max_loan,
+        expires_at: expiry,
+    });
+
     Ok(())
 }
 
@@ -91,5 +101,15 @@ pub fn handle_request_loan(
         },
         now,
         ctx.bumps.loan,
-    )
+    )?;
+
+    emit!(LoanRequested {
+        loan: ctx.accounts.loan.key(),
+        borrower: ctx.accounts.borrower.key(),
+        amount,
+        tier: proof.tier,
+        due_time: ctx.accounts.loan.due_time,
+    });
+
+    Ok(())
 }

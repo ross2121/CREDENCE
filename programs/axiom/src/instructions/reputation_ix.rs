@@ -36,7 +36,7 @@ pub struct UpdateReputation<'info> {
 pub struct StakeBond<'info> {
     #[account(mut)]
     pub wallet: Signer<'info>,
-    #[account(mut)]
+    #[account(mut, constraint = wallet_usdt.owner == wallet.key() @ AxiomError::Unauthorized)]
     pub wallet_usdt: Account<'info, TokenAccount>,
     #[account(mut)]
     pub stake_vault: Account<'info, TokenAccount>,

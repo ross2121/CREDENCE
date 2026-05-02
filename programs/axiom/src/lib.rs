@@ -1,5 +1,6 @@
 pub mod constants;
 pub mod error;
+pub mod events;
 pub mod ika;
 pub mod instructions;
 pub mod kamino;
@@ -10,6 +11,7 @@ use anchor_lang::prelude::*;
 
 pub use constants::*;
 pub use error::*;
+pub use events::*;
 pub use ika::*;
 pub use instructions::*;
 pub use kamino::*;

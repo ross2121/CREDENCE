@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    mock_ika_verify_policy, IkaPolicy, IkaPolicyArgs, IkaPolicyKind, MAX_IKA_DESTINATIONS,
-    ORIGIN_CHAIN_BYTES,
+    mock_ika_verify_policy, IkaPolicy, IkaPolicyArgs, IkaPolicyKind, IkaPolicyVerified,
+    MAX_IKA_DESTINATIONS, ORIGIN_CHAIN_BYTES,
 };
 
 #[derive(Accounts)]
@@ -62,5 +62,13 @@ pub fn handle_verify_ika_policy(
     destination: Pubkey,
     amount: u64,
 ) -> Result<()> {
-    mock_ika_verify_policy(&ctx.accounts.ika_policy, dwallet, destination, amount)
+    mock_ika_verify_policy(&ctx.accounts.ika_policy, dwallet, destination, amount)?;
+    emit!(IkaPolicyVerified {
+        policy: ctx.accounts.ika_policy.key(),
+        dwallet,
+        destination,
+        amount,
+        kind: ctx.accounts.ika_policy.kind,
+    });
+    Ok(())
 }

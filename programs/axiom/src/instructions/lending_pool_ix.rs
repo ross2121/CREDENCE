@@ -1,7 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-use crate::{AxiomError, LendingPool, Loan, LoanStatus};
+use crate::{
+    AxiomError, LendingPool, LiquidityDeposited, LiquidityWithdrawn, Loan, LoanDisbursed,
+    LoanStatus,
+};
 
 #[derive(Accounts)]
 pub struct InitializePool<'info> {
@@ -25,7 +28,7 @@ pub struct InitializePool<'info> {
 pub struct DepositLiquidity<'info> {
     #[account(mut)]
     pub lender: Signer<'info>,
-    #[account(mut)]
+    #[account(mut, constraint = lender_usdt.owner == lender.key() @ AxiomError::Unauthorized)]
     pub lender_usdt: Account<'info, TokenAccount>,
     #[account(mut, has_one = usdt_vault @ AxiomError::InvalidVault)]
     pub lending_pool: Account<'info, LendingPool>,
@@ -100,7 +103,13 @@ pub fn handle_deposit_liquidity(ctx: Context<DepositLiquidity>, amount: u64) -> 
 
     token::transfer(ctx.accounts.deposit_transfer_context(), amount)?;
 
-    ctx.accounts.lending_pool.deposit(amount)
+    ctx.accounts.lending_pool.deposit(amount)?;
+    emit!(LiquidityDeposited {
+        pool: ctx.accounts.lending_pool.key(),
+        lender: ctx.accounts.lender.key(),
+        amount,
+    });
+    Ok(())
 }
 
 pub fn handle_withdraw_liquidity(ctx: Context<WithdrawLiquidity>, amount: u64) -> Result<()> {
@@ -124,7 +133,13 @@ pub fn handle_withdraw_liquidity(ctx: Context<WithdrawLiquidity>, amount: u64) -
             .withdraw_transfer_context()
             .with_signer(signer_seeds),
         amount,
-    )
+    )?;
+    emit!(LiquidityWithdrawn {
+        pool: ctx.accounts.lending_pool.key(),
+        authority: ctx.accounts.authority.key(),
+        amount,
+    });
+    Ok(())
 }
 
 pub fn handle_disburse_loan(ctx: Context<DisburseLoan>) -> Result<()> {
@@ -154,7 +169,13 @@ pub fn handle_disburse_loan(ctx: Context<DisburseLoan>) -> Result<()> {
             .disburse_transfer_context()
             .with_signer(signer_seeds),
         amount,
-    )
+    )?;
+    emit!(LoanDisbursed {
+        loan: ctx.accounts.loan.key(),
+        borrower: ctx.accounts.loan.borrower,
+        amount,
+    });
+    Ok(())
 }
 
 impl<'info> DepositLiquidity<'info> {

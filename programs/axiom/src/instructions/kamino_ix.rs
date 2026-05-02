@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{cpi_kamino_deposit, cpi_kamino_withdraw, AxiomError, LendingPool};
+use crate::{cpi_kamino_deposit, cpi_kamino_withdraw, AxiomError, KaminoRebalanced, LendingPool};
 
 #[derive(Accounts)]
 pub struct RebalanceKamino<'info> {
@@ -22,7 +22,14 @@ pub struct RebalanceKamino<'info> {
 pub fn handle_rebalance_to_kamino(ctx: Context<RebalanceKamino>, amount: u64) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
     ctx.accounts.lending_pool.rebalance_to_kamino(amount, now)?;
-    cpi_kamino_deposit(ctx.accounts.kamino_program.to_account_info(), amount)
+    cpi_kamino_deposit(ctx.accounts.kamino_program.to_account_info(), amount)?;
+    emit!(KaminoRebalanced {
+        pool: ctx.accounts.lending_pool.key(),
+        to_kamino: true,
+        amount,
+        kamino_allocation_bps: ctx.accounts.lending_pool.kamino_allocation,
+    });
+    Ok(())
 }
 
 pub fn handle_rebalance_from_kamino(ctx: Context<RebalanceKamino>, amount: u64) -> Result<()> {
@@ -30,5 +37,12 @@ pub fn handle_rebalance_from_kamino(ctx: Context<RebalanceKamino>, amount: u64) 
     ctx.accounts
         .lending_pool
         .rebalance_from_kamino(amount, now)?;
-    cpi_kamino_withdraw(ctx.accounts.kamino_program.to_account_info(), amount)
+    cpi_kamino_withdraw(ctx.accounts.kamino_program.to_account_info(), amount)?;
+    emit!(KaminoRebalanced {
+        pool: ctx.accounts.lending_pool.key(),
+        to_kamino: false,
+        amount,
+        kamino_allocation_bps: ctx.accounts.lending_pool.kamino_allocation,
+    });
+    Ok(())
 }

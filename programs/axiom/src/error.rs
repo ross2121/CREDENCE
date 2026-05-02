@@ -50,6 +50,8 @@ pub enum AxiomError {
     KaminoAllocationExceeded,
     #[msg("Collateral is above liquidation threshold")]
     CollateralSafe,
+    #[msg("Collateral below liquidation threshold")]
+    LiquidationThresholdBreached,
     #[msg("Liquidation grace period is still active")]
     GracePeriodActive,
     #[msg("Liquidation warning has not been issued")]
@@ -64,4 +66,10 @@ pub enum AxiomError {
     DisputeQuorumNotReached,
     #[msg("Dispute is not open")]
     DisputeNotOpen,
+    #[msg("Repayment stream underfunded; top up required")]
+    StreamUnderfunded,
+    #[msg("Reputation score too low for requested tier")]
+    ReputationTooLow,
+    #[msg("Invalid loan account")]
+    InvalidLoanAccount,
 }

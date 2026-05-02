@@ -1,7 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-use crate::{Arbitrator, AxiomError, Dispute, DisputeRuling, Loan, ARBITRATOR_STAKE_REQUIREMENT};
+use crate::{
+    ArbitrationVoteSubmitted, Arbitrator, AxiomError, Dispute, DisputeFinalized, DisputeOpened,
+    DisputeRuling, Loan, ARBITRATOR_STAKE_REQUIREMENT,
+};
 
 #[derive(Accounts)]
 pub struct OpenDispute<'info> {
@@ -23,7 +26,7 @@ pub struct OpenDispute<'info> {
 pub struct RegisterArbitrator<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
-    #[account(mut)]
+    #[account(mut, constraint = authority_usdt.owner == authority.key() @ AxiomError::Unauthorized)]
     pub authority_usdt: Account<'info, TokenAccount>,
     #[account(mut)]
     pub stake_vault: Account<'info, TokenAccount>,
@@ -66,6 +69,10 @@ pub fn handle_open_dispute(
     _loan_id: Pubkey,
     evidence_hash: [u8; 32],
 ) -> Result<()> {
+    require!(
+        ctx.accounts.loan.key() == _loan_id,
+        AxiomError::InvalidLoanAccount
+    );
     let now = Clock::get()?.unix_timestamp;
     ctx.accounts.dispute.open(
         ctx.accounts.loan.key(),
@@ -74,6 +81,12 @@ pub fn handle_open_dispute(
         now,
         ctx.bumps.dispute,
     );
+    emit!(DisputeOpened {
+        dispute: ctx.accounts.dispute.key(),
+        loan: ctx.accounts.loan.key(),
+        opener: ctx.accounts.opener.key(),
+        evidence_hash,
+    });
     Ok(())
 }
 
@@ -97,12 +110,25 @@ pub fn handle_submit_arbitration_vote(
     ctx.accounts
         .dispute
         .submit_vote(ctx.accounts.authority.key(), ruling)?;
-    ctx.accounts.arbitrator.record_vote()
+    ctx.accounts.arbitrator.record_vote()?;
+    emit!(ArbitrationVoteSubmitted {
+        dispute: ctx.accounts.dispute.key(),
+        arbitrator: ctx.accounts.authority.key(),
+        ruling,
+        vote_count: ctx.accounts.dispute.vote_count,
+    });
+    Ok(())
 }
 
 pub fn handle_finalize_dispute(ctx: Context<FinalizeDispute>, _dispute_id: Pubkey) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
-    ctx.accounts.dispute.finalize(now)?;
+    let ruling = ctx.accounts.dispute.finalize(now)?;
+    emit!(DisputeFinalized {
+        dispute: ctx.accounts.dispute.key(),
+        ruling,
+        borrower_votes: ctx.accounts.dispute.borrower_votes,
+        lender_votes: ctx.accounts.dispute.lender_votes,
+    });
     Ok(())
 }
 

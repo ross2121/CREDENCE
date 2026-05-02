@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-use crate::{AxiomError, Loan, RepaymentStream, RepaymentStreamArgs};
+use crate::{AxiomError, Loan, RepaymentClaimed, RepaymentStream, RepaymentStreamArgs};
 
 #[derive(Accounts)]
 pub struct InitRepayStream<'info> {
@@ -25,7 +25,7 @@ pub struct InitRepayStream<'info> {
 pub struct FundStream<'info> {
     #[account(mut)]
     pub borrower: Signer<'info>,
-    #[account(mut)]
+    #[account(mut, constraint = borrower_usdt.owner == borrower.key() @ AxiomError::Unauthorized)]
     pub borrower_usdt: Account<'info, TokenAccount>,
     #[account(
         mut,
@@ -116,7 +116,13 @@ pub fn handle_claim_repayments(ctx: Context<ClaimRepayments>) -> Result<()> {
             .claim_transfer_context()
             .with_signer(signer_seeds),
         amount,
-    )
+    )?;
+    emit!(RepaymentClaimed {
+        loan: ctx.accounts.loan.key(),
+        claimant: ctx.accounts.claimant.key(),
+        amount,
+    });
+    Ok(())
 }
 
 pub fn handle_close_repayment_stream(ctx: Context<CloseStream>) -> Result<()> {

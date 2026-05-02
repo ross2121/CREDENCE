@@ -120,12 +120,12 @@
 
 ### 1.12 Contract Hardening
 
-- [ ] Add complete error codes from `PROGRAMS.md`.
-- [ ] Audit PDA seeds, bumps, signer constraints, and token constraints.
-- [ ] Add event emissions for app and agent listeners.
-- [ ] Add localnet seed script for USDT pool setup.
-- [ ] Run full Anchor test suite.
-- [ ] Commit: `chore(contract): harden protocol checks and events`
+- [x] Add complete error codes from `PROGRAMS.md`.
+- [x] Audit PDA seeds, bumps, signer constraints, and token constraints.
+- [x] Add event emissions for app and agent listeners.
+- [x] Add localnet seed script for USDT pool setup.
+- [x] Run full Anchor test suite.
+- [x] Commit: `chore(contract): harden protocol checks and events`
 
 ## 2. ZK Credit Circuit
 
