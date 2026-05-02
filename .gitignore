@@ -7,3 +7,5 @@ test-ledger
 app/.next
 app/node_modules
 app/tsconfig.tsbuildinfo
+api/dist
+api/node_modules

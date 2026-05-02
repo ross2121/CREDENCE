@@ -277,12 +277,12 @@
 
 ## 8. Backend Services
 
-- [ ] Create Fastify API server.
-- [ ] Add PostgreSQL schema for loan metadata and analytics.
-- [ ] Add Redis cache for APY and price feeds.
-- [ ] Add BullMQ jobs for async scoring and analytics refresh.
-- [ ] Add health checks.
-- [ ] Commit: `feat(api): scaffold backend services`
+- [x] Create Fastify API server.
+- [x] Add PostgreSQL schema for loan metadata and analytics.
+- [x] Add Redis cache for APY and price feeds.
+- [x] Add BullMQ jobs for async scoring and analytics refresh.
+- [x] Add health checks.
+- [x] Commit: `feat(api): scaffold backend services`
 
 ## 9. Scripts and Deployment
 
