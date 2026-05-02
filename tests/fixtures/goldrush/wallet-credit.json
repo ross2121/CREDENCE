@@ -1,0 +1,86 @@
+{
+  "wallet": "goldrush-wallet",
+  "transfers": [
+    {
+      "chain": "solana-mainnet",
+      "tokenSymbol": "USDT",
+      "direction": "in",
+      "amountUsd": 12000,
+      "timestamp": 1770000000,
+      "protocol": "kamino"
+    },
+    {
+      "chain": "solana-mainnet",
+      "tokenSymbol": "USDT",
+      "direction": "out",
+      "amountUsd": 7000,
+      "timestamp": 1770500000,
+      "protocol": "axiom"
+    },
+    {
+      "chain": "solana-mainnet",
+      "tokenSymbol": "SOL",
+      "direction": "out",
+      "amountUsd": 800,
+      "timestamp": 1770800000,
+      "protocol": "jupiter"
+    },
+    {
+      "chain": "base-mainnet",
+      "tokenSymbol": "USDT",
+      "direction": "in",
+      "amountUsd": 5000,
+      "timestamp": 1769000000,
+      "protocol": "aave"
+    },
+    {
+      "chain": "base-mainnet",
+      "tokenSymbol": "USDT",
+      "direction": "out",
+      "amountUsd": 2500,
+      "timestamp": 1769600000
+    }
+  ],
+  "balances": [
+    {
+      "chain": "solana-mainnet",
+      "tokenSymbol": "USDT",
+      "balanceUsd": 6800
+    },
+    {
+      "chain": "base-mainnet",
+      "tokenSymbol": "USDT",
+      "balanceUsd": 2400
+    }
+  ],
+  "portfolio": [
+    {
+      "chain": "solana-mainnet",
+      "timestamp": 1768000000,
+      "totalUsd": 14000
+    },
+    {
+      "chain": "solana-mainnet",
+      "timestamp": 1770000000,
+      "totalUsd": 18000
+    },
+    {
+      "chain": "base-mainnet",
+      "timestamp": 1768500000,
+      "totalUsd": 6000
+    },
+    {
+      "chain": "base-mainnet",
+      "timestamp": 1770000000,
+      "totalUsd": 9000
+    }
+  ],
+  "collateralPositions": {
+    "solana-mainnet": 3,
+    "base-mainnet": 1
+  },
+  "repayments": {
+    "solana-mainnet": 2,
+    "base-mainnet": 1
+  }
+}

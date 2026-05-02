@@ -176,13 +176,13 @@
 
 ### 6.1 GoldRush
 
-- [ ] Add GoldRush SDK client.
-- [ ] Fetch Solana transaction history.
-- [ ] Fetch cross-chain balances.
-- [ ] Fetch historical portfolio data.
-- [ ] Extract USDT transfer patterns.
-- [ ] Add fixtures for offline demo mode.
-- [ ] Commit: `feat(integration): add goldrush credit data`
+- [x] Add GoldRush SDK client.
+- [x] Fetch Solana transaction history.
+- [x] Fetch cross-chain balances.
+- [x] Fetch historical portfolio data.
+- [x] Extract USDT transfer patterns.
+- [x] Add fixtures for offline demo mode.
+- [x] Commit: `feat(integration): add goldrush credit data`
 
 ### 6.2 Ika
 
