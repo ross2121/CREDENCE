@@ -18,4 +18,14 @@ pub enum AxiomError {
     Unauthorized,
     #[msg("Loan is not active")]
     InvalidLoanStatus,
+    #[msg("Credit proof has expired; must re-score with QVAC agent")]
+    CreditProofExpired,
+    #[msg("Loan amount exceeds tier maximum")]
+    LoanExceedsTierLimit,
+    #[msg("Insufficient collateral for this credit tier")]
+    InsufficientCollateral,
+    #[msg("Credit proof does not belong to this borrower")]
+    InvalidCreditProofOwner,
+    #[msg("Loan duration must be greater than zero")]
+    InvalidLoanDuration,
 }

@@ -40,14 +40,14 @@
 
 ### 1.4 Credit Registry and Loan Request
 
-- [ ] Implement credit proof registration.
-- [ ] Store proof hash, tier, expiry, and max loan.
-- [ ] Validate proof expiry.
-- [ ] Validate tier max loan amount.
-- [ ] Validate collateral requirement by tier.
-- [ ] Implement loan request creation.
-- [ ] Add tests for tier limits, expired proof, insufficient collateral, and valid loan creation.
-- [ ] Commit: `feat(contract): implement credit registry and loan requests`
+- [x] Implement credit proof registration.
+- [x] Store proof hash, tier, expiry, and max loan.
+- [x] Validate proof expiry.
+- [x] Validate tier max loan amount.
+- [x] Validate collateral requirement by tier.
+- [x] Implement loan request creation.
+- [x] Add tests for tier limits, expired proof, insufficient collateral, and valid loan creation.
+- [x] Commit: `feat(contract): implement credit registry and loan requests`
 
 ### 1.5 ZK Proof Verifier Stub
 
