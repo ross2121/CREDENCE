@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install root dependencies
+        run: npm ci
+      - name: Install app dependencies
+        run: npm ci
+        working-directory: app
+      - name: Install api dependencies
+        run: npm ci
+        working-directory: api
+      - name: SDK tests
+        run: npm run sdk:test
+      - name: Agent tests
+        run: npm run agent:credit:test && npm run agent:yield:test
+      - name: Integration tests
+        run: |
+          npm run integration:goldrush:test
+          npm run integration:ika:test
+          npm run integration:kamino:test
+          npm run integration:birdeye:test
+          npm run integration:quicknode:test
+          npm run integration:torque:test
+      - name: Frontend checks
+        run: npm run app:typecheck && npm run app:build
+      - name: API checks
+        run: npm run api:typecheck && npm run api:build

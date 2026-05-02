@@ -286,12 +286,12 @@
 
 ## 9. Scripts and Deployment
 
-- [ ] Add localnet bootstrap script.
-- [ ] Add devnet deploy script.
-- [ ] Add pool seeding script.
-- [ ] Add environment example file.
-- [ ] Add CI checks for contracts, SDK, agents, and frontend.
-- [ ] Commit: `chore(devops): add deployment and ci scripts`
+- [x] Add localnet bootstrap script.
+- [x] Add devnet deploy script.
+- [x] Add pool seeding script.
+- [x] Add environment example file.
+- [x] Add CI checks for contracts, SDK, agents, and frontend.
+- [x] Commit: `chore(devops): add deployment and ci scripts`
 
 ## 10. End-to-End Demo
 
