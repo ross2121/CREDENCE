@@ -30,13 +30,13 @@
 
 ### 1.3 Lending Pool Instructions
 
-- [ ] Implement pool initialization.
-- [ ] Implement USDT deposit liquidity.
-- [ ] Implement utilization-aware withdrawal.
-- [ ] Implement loan disbursement from the pool vault.
-- [ ] Track total deposits, borrowed amount, utilization, and vault balances.
-- [ ] Add tests for deposit, withdraw, insufficient liquidity, and disbursement.
-- [ ] Commit: `feat(contract): implement lending pool instructions`
+- [x] Implement pool initialization.
+- [x] Implement USDT deposit liquidity.
+- [x] Implement utilization-aware withdrawal.
+- [x] Implement loan disbursement from the pool vault.
+- [x] Track total deposits, borrowed amount, utilization, and vault balances.
+- [x] Add tests for deposit, withdraw, insufficient liquidity, and disbursement.
+- [x] Commit: `feat(contract): implement lending pool instructions`
 
 ### 1.4 Credit Registry and Loan Request
 
