@@ -51,12 +51,12 @@
 
 ### 1.5 ZK Proof Verifier Stub
 
-- [ ] Add Groth16 verifier interface.
-- [ ] Add local/mock verifier for hackathon demo.
-- [ ] Wire `verify_credit_proof` into proof registration.
-- [ ] Define public inputs: tier threshold, wallet hash, model hash.
-- [ ] Add tests for accepted and rejected proofs.
-- [ ] Commit: `feat(contract): add zk credit proof verification`
+- [x] Add Groth16 verifier interface.
+- [x] Add local/mock verifier for hackathon demo.
+- [x] Wire `verify_credit_proof` into proof registration.
+- [x] Define public inputs: tier threshold, wallet hash, model hash.
+- [x] Add tests for accepted and rejected proofs.
+- [x] Commit: `feat(contract): add zk credit proof verification`
 
 ### 1.6 Repayment Streaming
 

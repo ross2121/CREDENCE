@@ -11,6 +11,15 @@ pub enum CreditTier {
 }
 
 impl CreditTier {
+    pub const fn threshold_score(self) -> u16 {
+        match self {
+            Self::Bronze => 400,
+            Self::Silver => 600,
+            Self::Gold => 750,
+            Self::Platinum => 900,
+        }
+    }
+
     pub const fn max_loan_usdt(self) -> u64 {
         match self {
             Self::Bronze => 500 * USDT_UNIT,

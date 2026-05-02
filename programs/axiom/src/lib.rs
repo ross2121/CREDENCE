@@ -2,6 +2,7 @@ pub mod constants;
 pub mod error;
 pub mod instructions;
 pub mod state;
+pub mod zk;
 
 use anchor_lang::prelude::*;
 
@@ -9,6 +10,7 @@ pub use constants::*;
 pub use error::*;
 pub use instructions::*;
 pub use state::*;
+pub use zk::*;
 
 declare_id!("HWZyoS2jthQHXuV9EDYfUz9iZBS6dbmWQyPKw1HB4dLb");
 

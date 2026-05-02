@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use solana_keccak_hasher::hash;
 
-use crate::{AxiomError, CreditProof, CreditTier, Loan, LoanRequestArgs};
+use crate::{verify_credit_proof, AxiomError, CreditProof, CreditTier, Loan, LoanRequestArgs};
 
 #[derive(Accounts)]
 pub struct RegisterCreditProof<'info> {
@@ -52,6 +52,7 @@ pub fn handle_register_credit_proof(
     let now = Clock::get()?.unix_timestamp;
     require!(expiry > now, AxiomError::CreditProofExpired);
     tier.validate_max_loan(max_loan)?;
+    verify_credit_proof(&zk_proof, tier, ctx.accounts.borrower.key())?;
 
     let proof = &mut ctx.accounts.credit_proof;
     proof.wallet = ctx.accounts.borrower.key();

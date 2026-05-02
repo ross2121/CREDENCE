@@ -28,4 +28,8 @@ pub enum AxiomError {
     InvalidCreditProofOwner,
     #[msg("Loan duration must be greater than zero")]
     InvalidLoanDuration,
+    #[msg("Invalid credit ZK proof")]
+    InvalidCreditProof,
+    #[msg("Invalid ZK public inputs")]
+    InvalidPublicInputs,
 }
