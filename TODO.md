@@ -241,13 +241,13 @@
 
 ### 7.2 Borrower Flow
 
-- [ ] Build wallet connection and dWallet setup screen.
-- [ ] Build credit scoring status view.
-- [ ] Build tier result and max loan view.
-- [ ] Build loan parameter form.
-- [ ] Build active loan dashboard.
-- [ ] Build repayment stream health view.
-- [ ] Commit: `feat(app): build borrower loan flow`
+- [x] Build wallet connection and dWallet setup screen.
+- [x] Build credit scoring status view.
+- [x] Build tier result and max loan view.
+- [x] Build loan parameter form.
+- [x] Build active loan dashboard.
+- [x] Build repayment stream health view.
+- [x] Commit: `feat(app): build borrower loan flow`
 
 ### 7.3 Lender Flow
 
