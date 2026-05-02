@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
+import { StatusState } from "@/components/status-state";
+import { demoApi } from "@/lib/demo-api";
 import { useAxiomStore } from "@/store/use-axiom-store";
 
 const apyRows = [
@@ -90,6 +92,18 @@ export default function LendPage() {
           label="Live earnings"
           value={`$${lenderPosition.dailyEarningsUsdt.toFixed(2)}/day`}
           detail={`$${lenderPosition.earnedUsdt.toLocaleString()} earned`}
+        />
+      </section>
+      <section className="grid gap-4 md:grid-cols-2">
+        <StatusState
+          message={demoApi.lender.message}
+          state={demoApi.lender.state}
+          title="Yield stream"
+        />
+        <StatusState
+          message={demoApi.borrower.message}
+          state={demoApi.borrower.state}
+          title="Ika policy"
         />
       </section>
 

@@ -12,6 +12,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
+import { StatusState } from "@/components/status-state";
+import { demoApi } from "@/lib/demo-api";
 import { useAxiomStore } from "@/store/use-axiom-store";
 
 export default function AnalyticsPage() {
@@ -54,6 +56,18 @@ export default function AnalyticsPage() {
         <Metric
           label="Repayment success"
           value={`${analytics.repaymentSuccess.at(-1)?.value ?? 0}%`}
+        />
+      </section>
+      <section className="grid gap-4 md:grid-cols-2">
+        <StatusState
+          message={demoApi.analytics.message}
+          state={demoApi.analytics.state}
+          title="Analytics fixtures"
+        />
+        <StatusState
+          message={demoApi.borrower.message}
+          state={demoApi.borrower.state}
+          title="QuickNode listener"
         />
       </section>
 

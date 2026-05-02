@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
+import { StatusState } from "@/components/status-state";
+import { demoApi } from "@/lib/demo-api";
 import { useAxiomStore } from "@/store/use-axiom-store";
 
 const scoringSteps = [
@@ -100,6 +102,18 @@ export default function BorrowPage() {
             <WalletMultiButton />
           </CardContent>
         </Card>
+      </section>
+      <section className="grid gap-4 md:grid-cols-2">
+        <StatusState
+          message={demoApi.borrower.message}
+          state={demoApi.borrower.state}
+          title="Borrower fixture"
+        />
+        <StatusState
+          message={demoApi.liquidation.message}
+          state={demoApi.liquidation.state}
+          title="Liquidation monitor"
+        />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-3">

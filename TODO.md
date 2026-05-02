@@ -269,11 +269,11 @@
 
 ### 7.5 Demo Polish
 
-- [ ] Add deterministic demo mode.
-- [ ] Add mocked APIs for no-key local demos.
-- [ ] Add loading, empty, error, and success states.
-- [ ] Verify responsive desktop and mobile layouts.
-- [ ] Commit: `feat(app): add hackathon demo mode`
+- [x] Add deterministic demo mode.
+- [x] Add mocked APIs for no-key local demos.
+- [x] Add loading, empty, error, and success states.
+- [x] Verify responsive desktop and mobile layouts.
+- [x] Commit: `feat(app): add hackathon demo mode`
 
 ## 8. Backend Services
 

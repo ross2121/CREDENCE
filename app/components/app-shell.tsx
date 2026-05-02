@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAxiomStore } from "@/store/use-axiom-store";
+import { demoSeed } from "@/lib/demo-api";
 
 const nav = [
   { href: "/borrow", label: "Borrow", icon: ShieldCheck },
@@ -64,6 +65,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6 lg:px-6">{children}</main>
+      {demoMode ? (
+        <footer className="mx-auto max-w-7xl px-4 pb-6 text-xs text-muted-foreground lg:px-6">
+          Deterministic demo seed: {demoSeed}
+        </footer>
+      ) : null}
     </div>
   );
 }
