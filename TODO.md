@@ -260,12 +260,12 @@
 
 ### 7.4 Analytics
 
-- [ ] Build pool utilization dashboard.
-- [ ] Build total deposited and borrowed stats.
-- [ ] Build credit tier distribution chart.
-- [ ] Build repayment success chart.
-- [ ] Build Torque rewards chart.
-- [ ] Commit: `feat(app): build protocol analytics`
+- [x] Build pool utilization dashboard.
+- [x] Build total deposited and borrowed stats.
+- [x] Build credit tier distribution chart.
+- [x] Build repayment success chart.
+- [x] Build Torque rewards chart.
+- [x] Commit: `feat(app): build protocol analytics`
 
 ### 7.5 Demo Polish
 

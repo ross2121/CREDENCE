@@ -64,6 +64,20 @@ type YieldAllocation = {
   lastRebalance: string;
 };
 
+type AnalyticsPoint = {
+  label: string;
+  value: number;
+};
+
+type AnalyticsState = {
+  utilizationHistory: AnalyticsPoint[];
+  creditTiers: AnalyticsPoint[];
+  repaymentSuccess: AnalyticsPoint[];
+  torqueRewards: AnalyticsPoint[];
+  activeLoans: number;
+  liquidationsAvoided: number;
+};
+
 type AxiomState = {
   activeView: AxiomView;
   demoMode: boolean;
@@ -75,6 +89,7 @@ type AxiomState = {
   lenderPosition: LenderPosition;
   lenderAction: LenderAction;
   yieldAllocation: YieldAllocation;
+  analytics: AnalyticsState;
   setActiveView: (view: AxiomView) => void;
   toggleDemoMode: () => void;
   updateLoanRequest: (request: Partial<BorrowerLoanRequest>) => void;
@@ -135,6 +150,37 @@ export const useAxiomStore = create<AxiomState>((set) => ({
     kaminoApyBps: 760,
     blendedApyBps: 970,
     lastRebalance: "May 3, 2026 09:00",
+  },
+  analytics: {
+    utilizationHistory: [
+      { label: "Mon", value: 58 },
+      { label: "Tue", value: 61 },
+      { label: "Wed", value: 64 },
+      { label: "Thu", value: 63 },
+      { label: "Fri", value: 66 },
+      { label: "Sat", value: 68 },
+      { label: "Sun", value: 66 },
+    ],
+    creditTiers: [
+      { label: "Bronze", value: 18 },
+      { label: "Silver", value: 34 },
+      { label: "Gold", value: 41 },
+      { label: "Platinum", value: 7 },
+    ],
+    repaymentSuccess: [
+      { label: "Jan", value: 94 },
+      { label: "Feb", value: 95 },
+      { label: "Mar", value: 96 },
+      { label: "Apr", value: 97 },
+      { label: "May", value: 97 },
+    ],
+    torqueRewards: [
+      { label: "Lender boost", value: 12_500 },
+      { label: "Referrals", value: 7_250 },
+      { label: "Repayers", value: 4_200 },
+    ],
+    activeLoans: 48,
+    liquidationsAvoided: 11,
   },
   setActiveView: (activeView) => set({ activeView }),
   toggleDemoMode: () => set((state) => ({ demoMode: !state.demoMode })),
