@@ -251,12 +251,12 @@
 
 ### 7.3 Lender Flow
 
-- [ ] Build deposit and withdraw flow.
-- [ ] Build current allocation view.
-- [ ] Build real-time earnings ticker.
-- [ ] Build APY breakdown.
-- [ ] Build Torque reward claim view.
-- [ ] Commit: `feat(app): build lender dashboard`
+- [x] Build deposit and withdraw flow.
+- [x] Build current allocation view.
+- [x] Build real-time earnings ticker.
+- [x] Build APY breakdown.
+- [x] Build Torque reward claim view.
+- [x] Commit: `feat(app): build lender dashboard`
 
 ### 7.4 Analytics
 

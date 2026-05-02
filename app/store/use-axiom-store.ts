@@ -43,6 +43,27 @@ type RepaymentStream = {
   healthBps: number;
 };
 
+type LenderPosition = {
+  walletUsdt: number;
+  suppliedUsdt: number;
+  earnedUsdt: number;
+  pendingTorque: number;
+  dailyEarningsUsdt: number;
+};
+
+type LenderAction = {
+  amountUsdt: number;
+};
+
+type YieldAllocation = {
+  axiomPoolUsdt: number;
+  kaminoUsdt: number;
+  borrowerInterestApyBps: number;
+  kaminoApyBps: number;
+  blendedApyBps: number;
+  lastRebalance: string;
+};
+
 type AxiomState = {
   activeView: AxiomView;
   demoMode: boolean;
@@ -51,9 +72,13 @@ type AxiomState = {
   loanRequest: BorrowerLoanRequest;
   activeLoan: ActiveLoan;
   repaymentStream: RepaymentStream;
+  lenderPosition: LenderPosition;
+  lenderAction: LenderAction;
+  yieldAllocation: YieldAllocation;
   setActiveView: (view: AxiomView) => void;
   toggleDemoMode: () => void;
   updateLoanRequest: (request: Partial<BorrowerLoanRequest>) => void;
+  updateLenderAction: (action: Partial<LenderAction>) => void;
 };
 
 export const useAxiomStore = create<AxiomState>((set) => ({
@@ -93,6 +118,24 @@ export const useAxiomStore = create<AxiomState>((set) => ({
     nextClaimUsdt: 92,
     healthBps: 11_900,
   },
+  lenderPosition: {
+    walletUsdt: 18_400,
+    suppliedUsdt: 32_000,
+    earnedUsdt: 1_248,
+    pendingTorque: 420,
+    dailyEarningsUsdt: 8.47,
+  },
+  lenderAction: {
+    amountUsdt: 2_500,
+  },
+  yieldAllocation: {
+    axiomPoolUsdt: 106_000,
+    kaminoUsdt: 22_000,
+    borrowerInterestApyBps: 1_180,
+    kaminoApyBps: 760,
+    blendedApyBps: 970,
+    lastRebalance: "May 3, 2026 09:00",
+  },
   setActiveView: (activeView) => set({ activeView }),
   toggleDemoMode: () => set((state) => ({ demoMode: !state.demoMode })),
   updateLoanRequest: (request) =>
@@ -107,4 +150,8 @@ export const useAxiomStore = create<AxiomState>((set) => ({
         },
       };
     }),
+  updateLenderAction: (action) =>
+    set((state) => ({
+      lenderAction: { ...state.lenderAction, ...action },
+    })),
 }));
