@@ -1,0 +1,14 @@
+{
+  "liquidUsdt": 7000,
+  "totalDeposits": 10000,
+  "totalBorrowed": 1000,
+  "kaminoAllocatedUsdt": 2000,
+  "kaminoAllocationBps": 2000,
+  "lastRebalance": 1800000000,
+  "market": {
+    "kaminoApyBps": 900,
+    "poolBaseApyBps": 250,
+    "usdtPriceUsd": 1,
+    "fetchedAt": 1800000100
+  }
+}

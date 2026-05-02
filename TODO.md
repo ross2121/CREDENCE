@@ -162,15 +162,15 @@
 
 ## 5. QVAC Yield Agent
 
-- [ ] Scaffold `axiom-agents/yield-agent`.
-- [ ] Implement pool state monitor.
-- [ ] Implement Kamino APY monitor.
-- [ ] Implement Birdeye price and APY data fetcher.
-- [ ] Implement allocation strategy by utilization bands.
-- [ ] Implement rebalance transaction builder through Ika policy.
-- [ ] Implement daily reward claim flow.
-- [ ] Add tests for allocation decisions.
-- [ ] Commit: `feat(agent): implement qvac yield agent`
+- [x] Scaffold `axiom-agents/yield-agent`.
+- [x] Implement pool state monitor.
+- [x] Implement Kamino APY monitor.
+- [x] Implement Birdeye price and APY data fetcher.
+- [x] Implement allocation strategy by utilization bands.
+- [x] Implement rebalance transaction builder through Ika policy.
+- [x] Implement daily reward claim flow.
+- [x] Add tests for allocation decisions.
+- [x] Commit: `feat(agent): implement qvac yield agent`
 
 ## 6. Protocol Integrations
 

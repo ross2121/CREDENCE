@@ -141,6 +141,14 @@ export class AxiomClient {
     );
   }
 
+  rebalanceToKamino(amount: bigint | number | string) {
+    return this.program.methods.rebalanceToKamino(toAnchorAmount(amount));
+  }
+
+  rebalanceFromKamino(amount: bigint | number | string) {
+    return this.program.methods.rebalanceFromKamino(toAnchorAmount(amount));
+  }
+
   decode = {
     lendingPool: (account: unknown) => account as DecodedLendingPool,
     creditProof: (account: unknown) => account as DecodedCreditProof,
@@ -185,8 +193,11 @@ function toAnchorAmount(value: bigint | number | string): BN {
 export type DecodedLendingPool = {
   authority: PublicKey;
   usdtVault: PublicKey;
+  kaminoVault: PublicKey;
   totalDeposits: bigint;
   totalBorrowed: bigint;
+  kaminoAllocation: bigint;
+  lastRebalance: bigint;
 };
 
 export type DecodedCreditProof = {
