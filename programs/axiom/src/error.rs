@@ -48,4 +48,10 @@ pub enum AxiomError {
     InvalidKaminoRebalance,
     #[msg("Kamino allocation would exceed pool deposits")]
     KaminoAllocationExceeded,
+    #[msg("Collateral is above liquidation threshold")]
+    CollateralSafe,
+    #[msg("Liquidation grace period is still active")]
+    GracePeriodActive,
+    #[msg("Liquidation warning has not been issued")]
+    LiquidationNotWarned,
 }

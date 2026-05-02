@@ -99,14 +99,14 @@
 
 ### 1.10 Liquidation and Price Safety
 
-- [ ] Add collateral valuation inputs.
-- [ ] Implement liquidation warning event.
-- [ ] Implement grace-period tracking.
-- [ ] Implement liquidation execution path.
-- [ ] Slash reputation on liquidation.
-- [ ] Return recovered USDT to pool accounting.
-- [ ] Add tests for safe collateral, warning, grace period, and liquidation.
-- [ ] Commit: `feat(contract): implement liquidation flow`
+- [x] Add collateral valuation inputs.
+- [x] Implement liquidation warning event.
+- [x] Implement grace-period tracking.
+- [x] Implement liquidation execution path.
+- [x] Slash reputation on liquidation.
+- [x] Return recovered USDT to pool accounting.
+- [x] Add tests for safe collateral, warning, grace period, and liquidation.
+- [x] Commit: `feat(contract): implement liquidation flow`
 
 ### 1.11 Disputes and Arbitration
 

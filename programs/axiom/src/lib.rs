@@ -142,4 +142,23 @@ pub mod axiom {
     pub fn rebalance_from_kamino(ctx: Context<RebalanceKamino>, amount: u64) -> Result<()> {
         instructions::kamino_ix::handle_rebalance_from_kamino(ctx, amount)
     }
+
+    pub fn issue_liquidation_warning(
+        ctx: Context<IssueLiquidationWarning>,
+        collateral_value_usdt: u64,
+        loan_value_usdt: u64,
+    ) -> Result<()> {
+        instructions::liquidation_ix::handle_issue_liquidation_warning(
+            ctx,
+            collateral_value_usdt,
+            loan_value_usdt,
+        )
+    }
+
+    pub fn execute_liquidation(
+        ctx: Context<ExecuteLiquidation>,
+        recovered_usdt: u64,
+    ) -> Result<()> {
+        instructions::liquidation_ix::handle_execute_liquidation(ctx, recovered_usdt)
+    }
 }

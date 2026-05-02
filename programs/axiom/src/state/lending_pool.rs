@@ -109,6 +109,31 @@ impl LendingPool {
         Ok(())
     }
 
+    pub fn recover_liquidation(
+        &mut self,
+        recovered_amount: u64,
+        outstanding_debt: u64,
+    ) -> Result<()> {
+        require!(recovered_amount > 0, AxiomError::InvalidAmount);
+
+        let borrowed_reduction = recovered_amount
+            .min(outstanding_debt)
+            .min(self.total_borrowed);
+        self.total_borrowed = self
+            .total_borrowed
+            .checked_sub(borrowed_reduction)
+            .ok_or(error!(AxiomError::MathOverflow))?;
+
+        if recovered_amount > outstanding_debt {
+            self.total_deposits = self
+                .total_deposits
+                .checked_add(recovered_amount - outstanding_debt)
+                .ok_or(error!(AxiomError::MathOverflow))?;
+        }
+
+        self.refresh_utilization()
+    }
+
     fn set_kamino_amount(&mut self, amount: u64) -> Result<()> {
         require!(
             amount <= self.total_deposits,
@@ -258,5 +283,31 @@ mod tests {
         let err = pool.rebalance_from_kamino(1_001, 456).unwrap_err();
 
         assert_eq!(err, error!(AxiomError::KaminoAllocationExceeded));
+    }
+
+    #[test]
+    fn liquidation_recovery_reduces_borrowed_amount() {
+        let mut pool = pool();
+        pool.deposit(10_000).unwrap();
+        pool.borrow(4_000).unwrap();
+
+        pool.recover_liquidation(3_000, 4_000).unwrap();
+
+        assert_eq!(pool.total_borrowed, 1_000);
+        assert_eq!(pool.total_deposits, 10_000);
+        assert_eq!(pool.utilization_rate, 1_000);
+    }
+
+    #[test]
+    fn liquidation_recovery_adds_surplus_to_deposits() {
+        let mut pool = pool();
+        pool.deposit(10_000).unwrap();
+        pool.borrow(4_000).unwrap();
+
+        pool.recover_liquidation(4_250, 4_000).unwrap();
+
+        assert_eq!(pool.total_borrowed, 0);
+        assert_eq!(pool.total_deposits, 10_250);
+        assert_eq!(pool.utilization_rate, 0);
     }
 }

@@ -89,6 +89,22 @@ impl Loan {
         self.last_repay_time = now;
         Ok(())
     }
+
+    pub fn outstanding_debt(&self) -> Result<u64> {
+        self.principal
+            .checked_sub(self.amount_repaid.min(self.principal))
+            .ok_or(error!(AxiomError::MathOverflow))
+    }
+
+    pub fn mark_liquidated(&mut self, now: i64) -> Result<()> {
+        require!(
+            self.status == LoanStatus::Active,
+            AxiomError::InvalidLoanStatus
+        );
+        self.status = LoanStatus::Liquidated;
+        self.last_repay_time = now;
+        Ok(())
+    }
 }
 
 pub struct LoanRequestArgs {
