@@ -2,6 +2,7 @@ pub mod constants;
 pub mod error;
 pub mod ika;
 pub mod instructions;
+pub mod kamino;
 pub mod state;
 pub mod zk;
 
@@ -11,6 +12,7 @@ pub use constants::*;
 pub use error::*;
 pub use ika::*;
 pub use instructions::*;
+pub use kamino::*;
 pub use state::*;
 pub use zk::*;
 
@@ -131,5 +133,13 @@ pub mod axiom {
         amount: u64,
     ) -> Result<()> {
         instructions::ika_policy_ix::handle_verify_ika_policy(ctx, dwallet, destination, amount)
+    }
+
+    pub fn rebalance_to_kamino(ctx: Context<RebalanceKamino>, amount: u64) -> Result<()> {
+        instructions::kamino_ix::handle_rebalance_to_kamino(ctx, amount)
+    }
+
+    pub fn rebalance_from_kamino(ctx: Context<RebalanceKamino>, amount: u64) -> Result<()> {
+        instructions::kamino_ix::handle_rebalance_from_kamino(ctx, amount)
     }
 }

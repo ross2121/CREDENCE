@@ -90,12 +90,12 @@
 
 ### 1.9 Kamino Rebalance Hooks
 
-- [ ] Add Kamino CPI interface or demo stub.
-- [ ] Implement rebalance to Kamino.
-- [ ] Implement rebalance from Kamino.
-- [ ] Track Kamino allocation bps and last rebalance timestamp.
-- [ ] Add tests for rebalance accounting and authorization.
-- [ ] Commit: `feat(contract): add kamino rebalance hooks`
+- [x] Add Kamino CPI interface or demo stub.
+- [x] Implement rebalance to Kamino.
+- [x] Implement rebalance from Kamino.
+- [x] Track Kamino allocation bps and last rebalance timestamp.
+- [x] Add tests for rebalance accounting and authorization.
+- [x] Commit: `feat(contract): add kamino rebalance hooks`
 
 ### 1.10 Liquidation and Price Safety
 

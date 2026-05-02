@@ -44,4 +44,8 @@ pub enum AxiomError {
     IkaAmountExceeded,
     #[msg("Invalid Ika policy configuration")]
     InvalidIkaPolicy,
+    #[msg("Invalid Kamino rebalance amount")]
+    InvalidKaminoRebalance,
+    #[msg("Kamino allocation would exceed pool deposits")]
+    KaminoAllocationExceeded,
 }
