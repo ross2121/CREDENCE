@@ -1,5 +1,6 @@
 pub mod constants;
 pub mod error;
+pub mod ika;
 pub mod instructions;
 pub mod state;
 pub mod zk;
@@ -8,6 +9,7 @@ use anchor_lang::prelude::*;
 
 pub use constants::*;
 pub use error::*;
+pub use ika::*;
 pub use instructions::*;
 pub use state::*;
 pub use zk::*;
@@ -100,5 +102,34 @@ pub mod axiom {
 
     pub fn stake_reputation_bond(ctx: Context<StakeBond>, amount: u64) -> Result<()> {
         instructions::reputation_ix::handle_stake_reputation_bond(ctx, amount)
+    }
+
+    pub fn initialize_ika_policy(
+        ctx: Context<InitializeIkaPolicy>,
+        kind: IkaPolicyKind,
+        allowed_destinations: [Pubkey; MAX_IKA_DESTINATIONS],
+        allowed_count: u8,
+        max_transaction_amount: u64,
+        cross_chain: bool,
+        origin_chain: [u8; ORIGIN_CHAIN_BYTES],
+    ) -> Result<()> {
+        instructions::ika_policy_ix::handle_initialize_ika_policy(
+            ctx,
+            kind,
+            allowed_destinations,
+            allowed_count,
+            max_transaction_amount,
+            cross_chain,
+            origin_chain,
+        )
+    }
+
+    pub fn verify_ika_policy(
+        ctx: Context<IkaVerify>,
+        dwallet: Pubkey,
+        destination: Pubkey,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::ika_policy_ix::handle_verify_ika_policy(ctx, dwallet, destination, amount)
     }
 }

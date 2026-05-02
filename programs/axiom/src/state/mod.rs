@@ -1,10 +1,12 @@
 pub mod credit_proof;
+pub mod ika_policy;
 pub mod lending_pool;
 pub mod loan;
 pub mod repayment_stream;
 pub mod reputation;
 
 pub use credit_proof::*;
+pub use ika_policy::*;
 pub use lending_pool::*;
 pub use loan::*;
 pub use repayment_stream::*;
@@ -20,6 +22,7 @@ mod tests {
         assert_eq!(LendingPool::LEN, 153);
         assert_eq!(Loan::LEN, 171);
         assert_eq!(CreditProof::LEN, 98);
+        assert_eq!(IkaPolicy::LEN, 197);
         assert_eq!(ReputationAccount::LEN, 125);
         assert_eq!(RepaymentStream::LEN, 161);
     }

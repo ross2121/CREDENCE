@@ -38,4 +38,10 @@ pub enum AxiomError {
     StreamAlreadyRepaid,
     #[msg("Repayment stream is not fully repaid")]
     StreamNotRepaid,
+    #[msg("Ika policy violation; destination not authorized")]
+    IkaPolicyViolation,
+    #[msg("Ika policy violation; amount exceeds maximum")]
+    IkaAmountExceeded,
+    #[msg("Invalid Ika policy configuration")]
+    InvalidIkaPolicy,
 }

@@ -81,12 +81,12 @@
 
 ### 1.8 Ika Policy Checks
 
-- [ ] Define borrower, lender, and cross-chain collateral policy account data.
-- [ ] Add Ika verifier CPI interface.
-- [ ] Add local/mock Ika verifier for hackathon demo.
-- [ ] Enforce allowed destinations for agent-triggered actions.
-- [ ] Add tests for allowed repayment, blocked destination, and max transaction amount.
-- [ ] Commit: `feat(contract): enforce ika policy checks`
+- [x] Define borrower, lender, and cross-chain collateral policy account data.
+- [x] Add Ika verifier CPI interface.
+- [x] Add local/mock Ika verifier for hackathon demo.
+- [x] Enforce allowed destinations for agent-triggered actions.
+- [x] Add tests for allowed repayment, blocked destination, and max transaction amount.
+- [x] Commit: `feat(contract): enforce ika policy checks`
 
 ### 1.9 Kamino Rebalance Hooks
 
