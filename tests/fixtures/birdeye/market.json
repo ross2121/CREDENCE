@@ -1,0 +1,25 @@
+{
+  "prices": {
+    "SOL": 150,
+    "JUP": 1.25
+  },
+  "lenderPortfolio": {
+    "wallet": "lender-wallet",
+    "totalUsd": 25000,
+    "suppliedUsdt": 12000,
+    "earnedYieldUsd": 320,
+    "activeLoans": 4
+  },
+  "poolApyHistory": [
+    {
+      "timestamp": 1800000000,
+      "apyBps": 720,
+      "utilizationBps": 4100
+    },
+    {
+      "timestamp": 1800086400,
+      "apyBps": 760,
+      "utilizationBps": 4500
+    }
+  ]
+}

@@ -204,12 +204,12 @@
 
 ### 6.4 Birdeye
 
-- [ ] Add Birdeye API client.
-- [ ] Fetch collateral token price.
-- [ ] Fetch lender portfolio stats.
-- [ ] Fetch pool APY history.
-- [ ] Add liquidation risk helper.
-- [ ] Commit: `feat(integration): add birdeye pricing`
+- [x] Add Birdeye API client.
+- [x] Fetch collateral token price.
+- [x] Fetch lender portfolio stats.
+- [x] Fetch pool APY history.
+- [x] Add liquidation risk helper.
+- [x] Commit: `feat(integration): add birdeye pricing`
 
 ### 6.5 QuickNode
 
