@@ -7,6 +7,7 @@
     "bootstrap:localnet": "bash scripts/bootstrap-localnet.sh",
     "deploy:devnet": "bash scripts/deploy/devnet.sh",
     "seed:pool": "npx ts-node scripts/seed-pool.ts",
+    "demo:e2e": "npx ts-node scripts/demo-e2e.ts",
     "test": "anchor test",
     "app:dev": "npm --prefix app run dev",
     "app:build": "npm --prefix app run build",

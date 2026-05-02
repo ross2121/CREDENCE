@@ -295,14 +295,14 @@
 
 ## 10. End-to-End Demo
 
-- [ ] Demo: borrower gets scored locally and registers proof.
-- [ ] Demo: borrower requests USDT loan.
-- [ ] Demo: repayment stream ticks and lender claims.
-- [ ] Demo: Ika blocks unauthorized agent destination.
-- [ ] Demo: lender deposits and yield agent rebalances to Kamino.
-- [ ] Demo: Torque campaign created from utilization trigger.
-- [ ] Demo: Birdeye liquidation warning path.
-- [ ] Commit: `feat(demo): wire end-to-end axiom flow`
+- [x] Demo: borrower gets scored locally and registers proof.
+- [x] Demo: borrower requests USDT loan.
+- [x] Demo: repayment stream ticks and lender claims.
+- [x] Demo: Ika blocks unauthorized agent destination.
+- [x] Demo: lender deposits and yield agent rebalances to Kamino.
+- [x] Demo: Torque campaign created from utilization trigger.
+- [x] Demo: Birdeye liquidation warning path.
+- [x] Commit: `feat(demo): wire end-to-end axiom flow`
 
 ## 11. Hackathon Submission Package
 
