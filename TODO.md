@@ -232,12 +232,12 @@
 
 ### 7.1 App Scaffold
 
-- [ ] Create Next.js 15 app with TailwindCSS and shadcn/ui.
-- [ ] Add Solana wallet adapter.
-- [ ] Add Privy embedded wallet support.
-- [ ] Add Zustand app store.
-- [ ] Add base layout and navigation for Borrow, Lend, Analytics.
-- [ ] Commit: `feat(app): scaffold axiom frontend`
+- [x] Create Next.js 15 app with TailwindCSS and shadcn/ui.
+- [x] Add Solana wallet adapter.
+- [x] Add Privy embedded wallet support.
+- [x] Add Zustand app store.
+- [x] Add base layout and navigation for Borrow, Lend, Analytics.
+- [x] Commit: `feat(app): scaffold axiom frontend`
 
 ### 7.2 Borrower Flow
 

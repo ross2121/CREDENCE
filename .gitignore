@@ -4,3 +4,6 @@ node_modules
 dist
 test-ledger
 .DS_Store
+app/.next
+app/node_modules
+app/tsconfig.tsbuildinfo
