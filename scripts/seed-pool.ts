@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 
 const programId = new PublicKey(
-  process.env.AXIOM_PROGRAM_ID ?? "HWZyoS2jthQHXuV9EDYfUz9iZBS6dbmWQyPKw1HB4dLb"
+  process.env.AXIOM_PROGRAM_ID ?? "6Xrd8Ymz9vxecWjifKern6LAzXQ2XKcS4D1zsJ8ENLpK"
 );
 const usdtMint = new PublicKey(
   process.env.USDT_MINT ?? "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
@@ -19,7 +19,9 @@ async function main() {
   console.log("USDT mint:", usdtMint.toBase58());
   console.log("Lending pool PDA:", poolPda.toBase58());
   console.log("Initial liquidity USDT:", initialLiquidity.toLocaleString());
-  console.log("Demo mode: transaction submission is intentionally not automatic.");
+  console.log(
+    "Demo mode: transaction submission is intentionally not automatic."
+  );
 }
 
 main().catch((error) => {

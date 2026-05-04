@@ -6,7 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-axiom = "HWZyoS2jthQHXuV9EDYfUz9iZBS6dbmWQyPKw1HB4dLb"
+axiom = "6Xrd8Ymz9vxecWjifKern6LAzXQ2XKcS4D1zsJ8ENLpK"
+
+[programs.devnet]
+axiom = "6Xrd8Ymz9vxecWjifKern6LAzXQ2XKcS4D1zsJ8ENLpK"
 
 [registry]
 url = "https://api.apr.dev"

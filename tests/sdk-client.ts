@@ -8,7 +8,7 @@ import {
   ikaPolicyKind,
 } from "../sdk/src";
 
-const programId = new PublicKey("HWZyoS2jthQHXuV9EDYfUz9iZBS6dbmWQyPKw1HB4dLb");
+const programId = new PublicKey("6Xrd8Ymz9vxecWjifKern6LAzXQ2XKcS4D1zsJ8ENLpK");
 
 function mockProgram() {
   const calls: unknown[][] = [];

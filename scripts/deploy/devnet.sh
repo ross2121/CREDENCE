@@ -8,7 +8,7 @@ cd "$ROOT_DIR"
 : "${ANCHOR_PROVIDER_WALLET:?ANCHOR_PROVIDER_WALLET is required}"
 
 echo "Deploying AXIOM program to devnet"
-anchor build
+anchor build -- --no-default-features --features production
 anchor deploy --provider.cluster "$SOLANA_RPC_URL" --provider.wallet "$ANCHOR_PROVIDER_WALLET"
 
 echo "Devnet deploy complete"

@@ -18,7 +18,7 @@ pub use kamino::*;
 pub use state::*;
 pub use zk::*;
 
-declare_id!("HWZyoS2jthQHXuV9EDYfUz9iZBS6dbmWQyPKw1HB4dLb");
+declare_id!("6Xrd8Ymz9vxecWjifKern6LAzXQ2XKcS4D1zsJ8ENLpK");
 
 #[program]
 pub mod axiom {

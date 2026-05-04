@@ -5,6 +5,8 @@ This repository now separates demo behavior from production-facing builds.
 ## Current State
 
 - Anchor program default builds still enable demo/mock features so hackathon demos and local tests keep working.
+- Devnet program address: `6Xrd8Ymz9vxecWjifKern6LAzXQ2XKcS4D1zsJ8ENLpK`.
+- Devnet upgrade authority: `EZBzQRSiC2oCTedZySDE1uhbC6VEZRP64JVWE3Hi6hRn`.
 - Production-style Rust builds disable default mock features with:
 
 ```sh

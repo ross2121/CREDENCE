@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 
 const AXIOM_PROGRAM_ID = new PublicKey(
-  "HWZyoS2jthQHXuV9EDYfUz9iZBS6dbmWQyPKw1HB4dLb"
+  "6Xrd8Ymz9vxecWjifKern6LAzXQ2XKcS4D1zsJ8ENLpK"
 );
 const USDT_MINT = new PublicKey("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB");
 
