@@ -3,13 +3,13 @@
 `credit_score.circom` proves that a private `credit_score` meets a public tier threshold while exposing only:
 
 - `tier_threshold`
-- `wallet_hash`
-- `model_hash`
+- `wallet_commitment`
+- `model_commitment`
 
-For the hackathon scaffold, wallet/model hash checks are linear placeholders so fixtures can be generated deterministically without a full trusted setup. Replace those constraints with Poseidon commitments before production use.
+Wallet/model bindings use Poseidon commitments over private secrets, private salts, and domain separators. This prevents the public inputs from directly revealing the private wallet/model material.
 
 Expected public inputs map directly to the Anchor verifier stub:
 
 ```text
-[tier_threshold, wallet_hash, model_hash]
+[tier_threshold, wallet_commitment, model_commitment]
 ```
