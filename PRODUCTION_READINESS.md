@@ -7,6 +7,10 @@ This repository now separates demo behavior from production-facing builds.
 - Anchor program default builds still enable demo/mock features so hackathon demos and local tests keep working.
 - Devnet program address: `6Xrd8Ymz9vxecWjifKern6LAzXQ2XKcS4D1zsJ8ENLpK`.
 - Devnet upgrade authority: `EZBzQRSiC2oCTedZySDE1uhbC6VEZRP64JVWE3Hi6hRn`.
+- Devnet AXIOM USDT-like mint: `G7u6HfeiagfxbdxXc75rDxpBfbJmv79n7vH1mtXaZSEk`.
+- Devnet USDT vault: `DjAdpd3A6QpsMfxqQCLbTaiXv1EPvAxUteM9wpFUy9U6`.
+- Devnet lending pool: `2Coc5aNzbnfL2rxYX6eF1yRzQYz3jvgXDtSi3Q4F3gjb`.
+- Devnet pool funding: `100000` AXIOM devnet USDT.
 - Production-style Rust builds disable default mock features with:
 
 ```sh
@@ -14,6 +18,14 @@ npm run contract:build:production
 ```
 
 - Without mock features, ZK proof verification, Ika verification, and Kamino CPI entry points now fail explicitly instead of silently using stubs.
+- Devnet smoke, pool initialization, and pool funding scripts are wired:
+
+```sh
+npm run devnet:smoke
+npm run devnet:init-pool
+npm run devnet:fund-pool
+```
+
 - The credit ZK interface now expects three public inputs matching the Circom circuit order: `tier_threshold`, `wallet_commitment`, `model_commitment`.
 - The SDK and credit agent now pass those public inputs into `registerCreditProof`.
 - Birdeye pricing has a live HTTP path using `BIRDEYE_API_KEY` and fixture fallback only when no key is configured.

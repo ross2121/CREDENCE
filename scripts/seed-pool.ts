@@ -4,24 +4,31 @@ const programId = new PublicKey(
   process.env.AXIOM_PROGRAM_ID ?? "6Xrd8Ymz9vxecWjifKern6LAzXQ2XKcS4D1zsJ8ENLpK"
 );
 const usdtMint = new PublicKey(
-  process.env.USDT_MINT ?? "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+  process.env.USDT_MINT ??
+    (() => {
+      throw new Error("USDT_MINT is required");
+    })()
+);
+const usdtVault = new PublicKey(
+  process.env.USDT_VAULT ??
+    (() => {
+      throw new Error("USDT_VAULT is required");
+    })()
 );
 
 async function main() {
   const initialLiquidity = Number(process.env.INITIAL_POOL_USDT ?? 100_000);
   const [poolPda] = PublicKey.findProgramAddressSync(
-    [Buffer.from("lending_pool"), usdtMint.toBuffer()],
+    [Buffer.from("lending_pool"), usdtVault.toBuffer()],
     programId
   );
 
   console.log("AXIOM pool seed plan");
   console.log("Program:", programId.toBase58());
   console.log("USDT mint:", usdtMint.toBase58());
+  console.log("USDT vault:", usdtVault.toBase58());
   console.log("Lending pool PDA:", poolPda.toBase58());
   console.log("Initial liquidity USDT:", initialLiquidity.toLocaleString());
-  console.log(
-    "Demo mode: transaction submission is intentionally not automatic."
-  );
 }
 
 main().catch((error) => {

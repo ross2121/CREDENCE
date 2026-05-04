@@ -98,7 +98,7 @@ type AxiomState = {
 
 export const useAxiomStore = create<AxiomState>((set) => ({
   activeView: "borrow",
-  demoMode: true,
+  demoMode: process.env.NEXT_PUBLIC_AXIOM_DEMO_MODE !== "false",
   pool: {
     totalDepositsUsdt: 128_000,
     totalBorrowedUsdt: 84_500,
