@@ -46,7 +46,7 @@ describe("Birdeye integration", () => {
     expect(risk.shouldLiquidate).to.equal(false);
   });
 
-  it("requires API key and transport for live requests", async () => {
+  it("requires API key for live requests", async () => {
     const client = new BirdeyeClient({ apiKey: "" });
 
     try {
@@ -55,5 +55,20 @@ describe("Birdeye integration", () => {
     } catch (error) {
       expect((error as Error).message).to.contain("BIRDEYE_API_KEY");
     }
+  });
+
+  it("uses Birdeye live headers with injected transport", async () => {
+    const client = new BirdeyeClient({
+      apiKey: "test-key",
+      fetchJson: async (url, apiKey) => {
+        expect(url).to.equal(
+          "https://public-api.birdeye.so/defi/price?address=USDT"
+        );
+        expect(apiKey).to.equal("test-key");
+        return { data: { value: 1.002 } };
+      },
+    });
+
+    expect(await client.tokenPrice("USDT")).to.equal(1.002);
   });
 });

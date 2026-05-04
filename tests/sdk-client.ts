@@ -67,6 +67,11 @@ describe("AxiomClient", () => {
       tier: "gold",
       maxLoan: "10000000000",
       proof: Buffer.from([1, 2, 3]),
+      publicInputs: [
+        new Array(32).fill(1),
+        new Array(32).fill(2),
+        new Array(32).fill(3),
+      ],
       expiry: "1800000000",
     });
 
@@ -75,6 +80,7 @@ describe("AxiomClient", () => {
       { gold: {} },
       "10000000000",
       [1, 2, 3],
+      [new Array(32).fill(1), new Array(32).fill(2), new Array(32).fill(3)],
       "1800000000",
     ]);
   });

@@ -53,10 +53,16 @@ pub mod axiom {
         tier: CreditTier,
         max_loan: u64,
         zk_proof: Vec<u8>,
+        public_inputs: Vec<[u8; 32]>,
         expiry: i64,
     ) -> Result<()> {
         instructions::credit_registry_ix::handle_register_credit_proof(
-            ctx, tier, max_loan, zk_proof, expiry,
+            ctx,
+            tier,
+            max_loan,
+            zk_proof,
+            public_inputs,
+            expiry,
         )
     }
 

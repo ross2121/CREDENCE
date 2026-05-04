@@ -29,7 +29,7 @@ writeFileSync(
     {
       circuit: "credit_score",
       proofSystem: "groth16",
-      publicInputs: ["tier_threshold", "wallet_hash", "model_hash"],
+      publicInputs: ["tier_threshold", "wallet_commitment", "model_commitment"],
       verificationKey: verifierJson,
     },
     null,

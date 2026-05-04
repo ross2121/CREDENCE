@@ -11,16 +11,13 @@ export class BirdeyeClient {
   private readonly apiKey?: string;
   private readonly baseUrl: string;
   private readonly fixture?: BirdeyeFixture;
-  private readonly fetchJson?: (
-    path: string,
-    apiKey: string
-  ) => Promise<unknown>;
+  private readonly fetchJson: (url: string, apiKey: string) => Promise<unknown>;
 
   constructor(config: BirdeyeConfig = {}) {
     this.apiKey = config.apiKey ?? process.env.BIRDEYE_API_KEY;
     this.baseUrl = config.baseUrl ?? "https://public-api.birdeye.so";
     this.fixture = config.fixture;
-    this.fetchJson = config.fetchJson;
+    this.fetchJson = config.fetchJson ?? defaultFetchJson;
   }
 
   async tokenPrice(mint: string): Promise<number> {
@@ -76,10 +73,24 @@ export class BirdeyeClient {
     if (!this.apiKey) {
       throw new Error("BIRDEYE_API_KEY is required for live Birdeye requests");
     }
-    if (!this.fetchJson) {
-      throw new Error("BirdeyeClient requires fetchJson for live API requests");
-    }
-
     return this.fetchJson(`${this.baseUrl}${path}`, this.apiKey);
   }
+}
+
+async function defaultFetchJson(url: string, apiKey: string): Promise<unknown> {
+  const response = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "x-api-key": apiKey,
+      "x-chain": "solana",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Birdeye request failed: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return response.json();
 }

@@ -72,12 +72,14 @@ export class AxiomClient {
     tier: CreditTierName;
     maxLoan: bigint | number | string;
     proof: Buffer | Uint8Array | number[];
+    publicInputs: Array<Buffer | Uint8Array | number[]>;
     expiry: bigint | number | string;
   }) {
-    return this.program.methods.registerCreditProof(
+    return (this.program.methods as any).registerCreditProof(
       creditTier(args.tier) as any,
       toAnchorAmount(args.maxLoan),
       Buffer.from(args.proof),
+      args.publicInputs.map((input) => fixedBytes32(input)),
       toAnchorAmount(args.expiry)
     );
   }
@@ -188,6 +190,33 @@ export function fixedOriginChain(originChain: string): number[] {
 
 function toAnchorAmount(value: bigint | number | string): BN {
   return new BN(value.toString());
+}
+
+export function fieldToBytes32(value: bigint | number | string): number[] {
+  let field = BigInt(value.toString());
+  if (field < BigInt(0)) {
+    throw new Error("Field element cannot be negative");
+  }
+
+  const bytes = new Array<number>(32).fill(0);
+  for (let index = 31; index >= 0; index -= 1) {
+    bytes[index] = Number(field & BigInt(0xff));
+    field >>= BigInt(8);
+  }
+
+  if (field !== BigInt(0)) {
+    throw new Error("Field element exceeds 32 bytes");
+  }
+
+  return bytes;
+}
+
+function fixedBytes32(input: Buffer | Uint8Array | number[]): number[] {
+  const bytes = Array.from(input);
+  if (bytes.length !== 32) {
+    throw new Error("ZK public input must be exactly 32 bytes");
+  }
+  return bytes;
 }
 
 export type DecodedLendingPool = {

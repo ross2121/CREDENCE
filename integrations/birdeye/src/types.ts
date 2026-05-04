@@ -37,5 +37,5 @@ export type BirdeyeConfig = {
   apiKey?: string;
   baseUrl?: string;
   fixture?: BirdeyeFixture;
-  fetchJson?: (path: string, apiKey: string) => Promise<unknown>;
+  fetchJson?: (url: string, apiKey: string) => Promise<unknown>;
 };

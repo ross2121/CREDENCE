@@ -5,6 +5,8 @@
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "seed:localnet": "npx ts-node scripts/seed-localnet.ts",
     "bootstrap:localnet": "bash scripts/bootstrap-localnet.sh",
+    "contract:build:demo": "anchor build",
+    "contract:build:production": "cargo build -p axiom --no-default-features --features production",
     "deploy:devnet": "bash scripts/deploy/devnet.sh",
     "seed:pool": "npx ts-node scripts/seed-pool.ts",
     "demo:e2e": "npx ts-node scripts/demo-e2e.ts",

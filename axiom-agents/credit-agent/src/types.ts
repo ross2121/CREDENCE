@@ -47,5 +47,6 @@ export type ProofRequest = {
 export type GeneratedCreditProof = {
   proof: number[];
   publicSignals: string[];
+  publicInputs: number[][];
   expiresAt: number;
 };

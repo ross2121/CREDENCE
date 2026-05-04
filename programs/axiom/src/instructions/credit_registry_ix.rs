@@ -48,6 +48,7 @@ pub fn handle_register_credit_proof(
     tier: CreditTier,
     max_loan: u64,
     zk_proof: Vec<u8>,
+    public_inputs: Vec<[u8; 32]>,
     expiry: i64,
 ) -> Result<()> {
     require!(max_loan > 0, AxiomError::InvalidAmount);
@@ -55,7 +56,7 @@ pub fn handle_register_credit_proof(
     let now = Clock::get()?.unix_timestamp;
     require!(expiry > now, AxiomError::CreditProofExpired);
     tier.validate_max_loan(max_loan)?;
-    verify_credit_proof(&zk_proof, tier, ctx.accounts.borrower.key())?;
+    verify_credit_proof(&zk_proof, public_inputs, tier)?;
 
     let proof = &mut ctx.accounts.credit_proof;
     proof.wallet = ctx.accounts.borrower.key();

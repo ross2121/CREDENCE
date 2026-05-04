@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::IkaPolicy;
 
+#[cfg(feature = "mock-ika")]
 pub fn mock_ika_verify_policy(
     policy: &IkaPolicy,
     dwallet: Pubkey,
@@ -9,6 +10,16 @@ pub fn mock_ika_verify_policy(
     amount: u64,
 ) -> Result<()> {
     policy.verify_action(dwallet, destination, amount)
+}
+
+#[cfg(not(feature = "mock-ika"))]
+pub fn mock_ika_verify_policy(
+    _policy: &IkaPolicy,
+    _dwallet: Pubkey,
+    _destination: Pubkey,
+    _amount: u64,
+) -> Result<()> {
+    err!(crate::AxiomError::ProductionCpiUnavailable)
 }
 
 #[cfg(test)]

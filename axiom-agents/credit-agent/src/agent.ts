@@ -40,6 +40,7 @@ export class CreditAgent {
       tier: decision.tier,
       maxLoan: decision.maxLoanUsdt * 1_000_000,
       proof: proof.proof,
+      publicInputs: proof.publicInputs,
       expiry: proof.expiresAt,
     });
   }

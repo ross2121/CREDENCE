@@ -102,4 +102,33 @@ describe("YieldAgent", () => {
     expect(market.kaminoApyBps).to.equal(777);
     expect(market.usdtPriceUsd).to.equal(0.999);
   });
+
+  it("fetches live Birdeye price through the injected client", async () => {
+    const previousApiKey = process.env.BIRDEYE_API_KEY;
+    process.env.BIRDEYE_API_KEY = "test-key";
+    const client = {
+      tokenPrice: async (mint: string) => {
+        expect(mint).to.equal("usdt-mint");
+        return 1.001;
+      },
+    };
+
+    try {
+      const market = await new BirdeyeFetcher(
+        "test-key",
+        1,
+        "usdt-mint",
+        client as any
+      ).marketSnapshot(888);
+
+      expect(market.kaminoApyBps).to.equal(888);
+      expect(market.usdtPriceUsd).to.equal(1.001);
+    } finally {
+      if (previousApiKey === undefined) {
+        delete process.env.BIRDEYE_API_KEY;
+      } else {
+        process.env.BIRDEYE_API_KEY = previousApiKey;
+      }
+    }
+  });
 });

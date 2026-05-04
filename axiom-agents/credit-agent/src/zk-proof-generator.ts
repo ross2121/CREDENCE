@@ -1,4 +1,6 @@
 import { createHash } from "crypto";
+import { fieldToBytes32 } from "../../../sdk/src";
+import { TIER_CONFIG } from "./model";
 import { GeneratedCreditProof, ProofRequest } from "./types";
 
 export class ZkProofGenerator {
@@ -14,13 +16,19 @@ export class ZkProofGenerator {
         })
       )
       .digest();
+    const tierThreshold = TIER_CONFIG[request.decision.tier].minScore;
 
     return {
       proof: Array.from(digest),
       publicSignals: [
-        String(request.decision.score),
+        String(tierThreshold),
         request.walletHash,
         request.modelHash,
+      ],
+      publicInputs: [
+        fieldToBytes32(tierThreshold),
+        fieldToBytes32(request.walletHash),
+        fieldToBytes32(request.modelHash),
       ],
       expiresAt: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
     };

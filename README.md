@@ -1,6 +1,6 @@
 # AXIOM — Sovereign AI Credit & Yield Protocol
 
-> *Your AI agent. Your data. Your money. Provably safe.*
+> _Your AI agent. Your data. Your money. Provably safe._
 
 ## What Is AXIOM?
 
@@ -16,11 +16,11 @@ Both sides are secured by **Ika dWallets**: the AI agents never hold raw private
 
 ## The Problem
 
-| DeFi Lending Today | Reality |
-|---|---|
-| Overcollateralized (Aave, Kamino) | Need $150 to borrow $100. Capital inefficient. |
+| DeFi Lending Today                  | Reality                                            |
+| ----------------------------------- | -------------------------------------------------- |
+| Overcollateralized (Aave, Kamino)   | Need $150 to borrow $100. Capital inefficient.     |
 | Undercollateralized (Maple, Credix) | Requires KYC, DAO whitelisting, centralized trust. |
-| Cloud AI yield managers | Your entire portfolio sent to a server. |
+| Cloud AI yield managers             | Your entire portfolio sent to a server.            |
 
 AXIOM creates a third path: **provable creditworthiness with zero data exposure**, backed by AI that never leaves your device, and funds constrained by cryptographic policy so the AI can never go rogue.
 
@@ -29,7 +29,7 @@ AXIOM creates a third path: **provable creditworthiness with zero data exposure*
 ## Core Thesis
 
 ```
-Private AI (QVAC) + Cryptographic Policy (Ika) + Stablecoin Economy (USDT) + Solana = 
+Private AI (QVAC) + Cryptographic Policy (Ika) + Stablecoin Economy (USDT) + Solana =
 The first truly sovereign DeFi credit protocol
 ```
 
@@ -37,15 +37,15 @@ The first truly sovereign DeFi credit protocol
 
 ## Hackathon Tracks
 
-| Track | Prize | Status |
-|---|---|---|
-| Tether (QVAC + USDT) | $10,000 USDT | Primary |
-| Encrypt / Ika (bridgeless capital markets) | $15,000 USDC | Primary |
-| Eitherway (Kamino + QuickNode + Birdeye) | $20,000 USDC | Primary |
-| Torque MCP | $3,000 USDC | Secondary |
-| GoldRush by Covalent | $3,000 USDC | Secondary |
-| Colosseum Frontier Grand Champion | $30,000 | Main |
-| Colosseum Public Goods Award | $10,000 | Bonus |
+| Track                                      | Prize        | Status    |
+| ------------------------------------------ | ------------ | --------- |
+| Tether (QVAC + USDT)                       | $10,000 USDT | Primary   |
+| Encrypt / Ika (bridgeless capital markets) | $15,000 USDC | Primary   |
+| Eitherway (Kamino + QuickNode + Birdeye)   | $20,000 USDC | Primary   |
+| Torque MCP                                 | $3,000 USDC  | Secondary |
+| GoldRush by Covalent                       | $3,000 USDC  | Secondary |
+| Colosseum Frontier Grand Champion          | $30,000      | Main      |
+| Colosseum Public Goods Award               | $10,000      | Bonus     |
 
 **Total sweep potential: ~$91,000**
 
@@ -69,7 +69,7 @@ AXIOM/
 ## Elevator Pitch
 
 > "Aave needs $150 collateral for a $100 loan. Banks need your credit report. AXIOM needs neither.
-> 
+>
 > Your QVAC AI agent scores your creditworthiness from your on-chain history — privately, on your device. It generates a ZK proof that says 'this wallet qualifies' without revealing anything else. You borrow USDT on Solana. The AI repays it automatically.
 >
 > On the lender side, a QVAC agent optimizes your yield between borrower interest and Kamino vaults — without any cloud service ever seeing your portfolio.
@@ -87,4 +87,4 @@ All side track submissions also due by May 11.
 
 ## Implementation Status
 
-Anchor contract implementation is in progress on `master`.
+Anchor contract implementation is available in this repo with demo defaults for hackathon flows. Production-style builds disable mock protocol paths and are tracked in [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md).
