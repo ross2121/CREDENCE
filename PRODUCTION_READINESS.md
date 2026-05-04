@@ -11,13 +11,17 @@ This repository now separates demo behavior from production-facing builds.
 - Devnet USDT vault: `DjAdpd3A6QpsMfxqQCLbTaiXv1EPvAxUteM9wpFUy9U6`.
 - Devnet lending pool: `2Coc5aNzbnfL2rxYX6eF1yRzQYz3jvgXDtSi3Q4F3gjb`.
 - Devnet pool funding: `100000` AXIOM devnet USDT.
+- Kamino devnet Kvault program: `devkRngFnfp4gBc5a3LsadgbQKdPo8MSZ4prFiNSVmY`.
+- Kamino Klend program: `KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD`.
 - Production-style Rust builds disable default mock features with:
 
 ```sh
 npm run contract:build:production
 ```
 
-- Without mock features, ZK proof verification, Ika verification, and Kamino CPI entry points now fail explicitly instead of silently using stubs.
+- Without mock features, ZK proof verification and Ika verification fail explicitly instead of silently using stubs.
+- Kamino Earn withdraw CPI is wired to the documented devnet Kvault/Klend programs. Calling it still requires a real Kamino devnet vault state, reserve, share mint, token vault, user share/token accounts, and the other accounts required by Kamino's withdraw CPI layout.
+- Kamino Earn deposit remains off-chain SDK/API only in this repo until Kamino publishes or provides the Rust CPI account layout for deposit.
 - Devnet smoke, pool initialization, and pool funding scripts are wired:
 
 ```sh

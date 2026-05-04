@@ -147,7 +147,7 @@ pub mod axiom {
         instructions::kamino_ix::handle_rebalance_to_kamino(ctx, amount)
     }
 
-    pub fn rebalance_from_kamino(ctx: Context<RebalanceKamino>, amount: u64) -> Result<()> {
+    pub fn rebalance_from_kamino(ctx: Context<RebalanceFromKamino>, amount: u64) -> Result<()> {
         instructions::kamino_ix::handle_rebalance_from_kamino(ctx, amount)
     }
 
