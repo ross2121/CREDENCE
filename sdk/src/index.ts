@@ -6,6 +6,7 @@ export type AxiomProgram = Program<Axiom>;
 
 export type CreditTierName = "bronze" | "silver" | "gold" | "platinum";
 export type IkaPolicyKindName = "borrower" | "lender" | "crossChainCollateral";
+export type AgentPolicyKindName = IkaPolicyKindName;
 export type DisputeRulingName = "borrower" | "lender";
 
 export const AXIOM_SEEDS = {
@@ -131,6 +132,16 @@ export class AxiomClient {
     );
   }
 
+  initializeAgentPolicy(args: {
+    kind: AgentPolicyKindName;
+    allowedDestinations: PublicKey[];
+    maxTransactionAmount: bigint | number | string;
+    crossChain?: boolean;
+    originChain?: string;
+  }) {
+    return this.initializeIkaPolicy(args);
+  }
+
   verifyIkaPolicy(
     dwallet: PublicKey,
     destination: PublicKey,
@@ -141,6 +152,14 @@ export class AxiomClient {
       destination,
       toAnchorAmount(amount)
     );
+  }
+
+  verifyAgentPolicy(
+    agentWallet: PublicKey,
+    destination: PublicKey,
+    amount: bigint | number | string
+  ) {
+    return this.verifyIkaPolicy(agentWallet, destination, amount);
   }
 
   rebalanceToKamino(amount: bigint | number | string) {

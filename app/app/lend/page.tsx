@@ -56,7 +56,8 @@ export default function LendPage() {
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             Supply USDT, track borrower demand, and let the local yield agent
-            route idle liquidity through Kamino under Ika policy limits.
+            route idle liquidity through Kamino under Privy and AXIOM policy
+            limits.
           </p>
         </div>
         <Card>
@@ -103,7 +104,7 @@ export default function LendPage() {
         <StatusState
           message={demoApi.borrower.message}
           state={demoApi.borrower.state}
-          title="Ika policy"
+          title="Privy policy"
         />
       </section>
 
@@ -138,8 +139,8 @@ export default function LendPage() {
             <div className="flex gap-3 rounded-md border border-border bg-muted p-3">
               <LockKeyhole className="mt-1 h-4 w-4 text-primary" />
               <p className="text-sm text-muted-foreground">
-                Ika policy permits deposits to the AXIOM vault and rebalances to
-                the configured Kamino vault only.
+                Privy policy and AXIOM on-chain checks permit deposits to the
+                AXIOM vault and rebalances to the configured Kamino vault only.
               </p>
             </div>
           </CardContent>
@@ -192,8 +193,8 @@ export default function LendPage() {
                 row.key === "borrower"
                   ? yieldAllocation.borrowerInterestApyBps
                   : row.key === "kamino"
-                    ? yieldAllocation.kaminoApyBps
-                    : yieldAllocation.blendedApyBps;
+                  ? yieldAllocation.kaminoApyBps
+                  : yieldAllocation.blendedApyBps;
 
               return (
                 <div key={row.key}>

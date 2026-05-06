@@ -4,7 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import { CreditAgent } from "../axiom-agents/credit-agent/src";
 import { YieldAgent, YieldStrategy } from "../axiom-agents/yield-agent/src";
 import { AxiomClient } from "../sdk/src";
-import { IkaDwalletClient } from "../integrations/ika/src";
+import { PrivyPolicyClient } from "../integrations/privy-policy/src";
 import { BirdeyeClient } from "../integrations/birdeye/src";
 import { TorqueMcpClient } from "../integrations/torque/src";
 
@@ -47,7 +47,7 @@ async function main() {
   const borrower = PublicKey.unique();
   const repaymentVault = PublicKey.unique();
   const blockedDestination = PublicKey.unique();
-  const dwallet = PublicKey.unique();
+  const agentWallet = PublicKey.unique();
 
   const creditAgent = new CreditAgent();
   const credit = await creditAgent.scoreWallet(
@@ -58,30 +58,31 @@ async function main() {
   creditAgent.buildLoanRequest(client, credit.decision, {
     amountUsdt: 5_000,
     durationDays: 30,
-    ikaDwallet: dwallet,
+    ikaDwallet: agentWallet,
   });
 
   client.initRepaymentStream();
   client.fundRepaymentStream(500);
   client.claimRepayments();
 
-  const ika = new IkaDwalletClient(client);
-  const policy = ika.borrowerPolicy({
+  const privy = new PrivyPolicyClient(client);
+  const policy = privy.borrowerPolicy({
     owner: borrower,
-    dwallet,
+    agentWallet,
     repaymentDestination: repaymentVault,
     maxTransactionAmount: 5_000,
+    privyPolicyId: "policy_devnet_borrower",
   });
-  let ikaBlocked = false;
+  let privyBlocked = false;
   try {
-    ika.validateOffchain(policy, {
-      dwallet,
+    privy.validateOffchain(policy, {
+      agentWallet,
       destination: blockedDestination,
       amount: 100,
       description: "Blocked repayment destination demo",
     });
   } catch {
-    ikaBlocked = true;
+    privyBlocked = true;
   }
 
   client.depositLiquidity(10_000);
@@ -99,9 +100,10 @@ async function main() {
   };
   const yieldDecision = new YieldStrategy().decide(pool, yieldData.market);
   new YieldAgent().buildRebalanceTransactions(client, yieldDecision, {
-    dwallet: PublicKey.unique(),
+    agentWallet: PublicKey.unique(),
     kaminoProgram: PublicKey.unique(),
     maxTransactionAmountUsdt: 5_000,
+    privyPolicyId: "policy_devnet_lender",
   });
 
   const torque = new TorqueMcpClient({
@@ -125,10 +127,14 @@ async function main() {
 
   const summary = {
     borrowerTier: credit.decision.tier,
-    proofRegistered: program.calls.some((call) => call[0] === "registerCreditProof"),
+    proofRegistered: program.calls.some(
+      (call) => call[0] === "registerCreditProof"
+    ),
     loanRequested: program.calls.some((call) => call[0] === "requestLoan"),
-    repaymentClaimBuilt: program.calls.some((call) => call[0] === "claimRepayments"),
-    ikaBlocked,
+    repaymentClaimBuilt: program.calls.some(
+      (call) => call[0] === "claimRepayments"
+    ),
+    privyBlocked,
     yieldAction: yieldDecision.action,
     torqueCampaign: campaigns[0]?.campaignId,
     liquidationShouldWarn: liquidationRisk.shouldWarn,

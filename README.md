@@ -10,7 +10,7 @@ AXIOM is a decentralized, private-AI-powered credit and yield protocol on Solana
 
 2. **AI-optimized yield for lenders** — idle USDT in the lending pool is autonomously rebalanced between borrower interest and Kamino vaults by a local QVAC yield model. Lenders earn more without doing anything.
 
-Both sides are secured by **Ika dWallets**: the AI agents never hold raw private keys. Every action is constrained by on-chain policy that even the agent cannot override.
+On Solana devnet, both sides are secured by **Privy wallet policy plus AXIOM on-chain policy**: agents can request actions, but every transaction is bounded by wallet-side authorization and program-side destination/amount checks. Ika dWallet support remains a future integration when public Solana CPI support is available.
 
 ---
 
@@ -29,7 +29,7 @@ AXIOM creates a third path: **provable creditworthiness with zero data exposure*
 ## Core Thesis
 
 ```
-Private AI (QVAC) + Cryptographic Policy (Ika) + Stablecoin Economy (USDT) + Solana =
+Private AI (QVAC) + Privy/AXIOM Policy + Stablecoin Economy (USDT) + Solana =
 The first truly sovereign DeFi credit protocol
 ```
 
@@ -74,7 +74,7 @@ AXIOM/
 >
 > On the lender side, a QVAC agent optimizes your yield between borrower interest and Kamino vaults — without any cloud service ever seeing your portfolio.
 >
-> The AI agents are bound by Ika dWallet policies. They can never move your money to an unauthorized destination. Not even if the AI is compromised.
+> The AI agents are bound by Privy wallet policy and AXIOM on-chain policy. They can never move your money to an unauthorized destination through the protocol path. Not even if the AI is compromised.
 >
 > This is DeFi credit the way it should have always been."
 

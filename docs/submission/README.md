@@ -24,7 +24,7 @@ API_PORT=8080 node api/dist/server.js
 Length: 2 minutes.
 
 1. Open `/borrow`.
-2. Show wallet and dWallet policy panel.
+2. Show wallet and Privy/AXIOM policy panel.
 3. Show credit scoring steps: GoldRush history, QVAC scoring, ZK proof.
 4. Adjust principal and duration.
 5. Show active loan and repayment stream health.
@@ -41,20 +41,21 @@ Length: 90 seconds.
 5. Show Torque rewards claim panel.
 6. Run `npm run demo:e2e` and point to `yieldAction` and `torqueCampaign`.
 
-### 3. Ika Policy Block Demo
+### 3. Privy / AXIOM Policy Block Demo
 
 Length: 45 seconds.
 
 1. Explain that the borrower agent can only repay to the AXIOM stream vault.
 2. Run `npm run demo:e2e`.
-3. Show `ikaBlocked: true`.
-4. Open `/borrow` and show the dWallet policy panel.
+3. Show `privyBlocked: true`.
+4. Open `/borrow` and show the policy panel.
 
 ## Submission Assets
 
 - Main pitch: `colosseum.md`
 - Tether/QVAC track: `tether-qvac.md`
 - Ika track: `ika.md`
+- Privy devnet policy layer: `privy.md`
 - Eitherway track: `eitherway.md`
 - Torque track: `torque.md`
 - GoldRush track: `goldrush.md`

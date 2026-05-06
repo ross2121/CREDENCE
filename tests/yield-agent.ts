@@ -73,7 +73,7 @@ describe("YieldAgent", () => {
     expect(decision.targetKaminoAllocationBps).to.equal(0);
   });
 
-  it("builds Ika policy check and rebalance SDK calls", () => {
+  it("builds agent policy check and rebalance SDK calls", () => {
     const agent = new YieldAgent();
     const data = fixture("low-utilization.json");
     const decision = agent.decide(pool(data), data.market);
@@ -81,7 +81,7 @@ describe("YieldAgent", () => {
     const client = new AxiomClient(program);
 
     const txs = agent.buildRebalanceTransactions(client, decision, {
-      dwallet: PublicKey.unique(),
+      agentWallet: PublicKey.unique(),
       kaminoProgram: PublicKey.unique(),
       maxTransactionAmountUsdt: 5_000,
     });

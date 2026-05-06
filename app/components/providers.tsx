@@ -35,9 +35,15 @@ export function Providers({ children }: { children: ReactNode }) {
         appearance: {
           theme: "light",
           accentColor: "#0f766e",
+          walletChainType: "solana-only",
         },
         embeddedWallets: {
-          createOnLogin: "users-without-wallets",
+          ethereum: {
+            createOnLogin: "off",
+          },
+          solana: {
+            createOnLogin: "users-without-wallets",
+          },
         },
       }}
     >

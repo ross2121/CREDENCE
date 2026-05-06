@@ -26,8 +26,14 @@ export type AllocationDecision = {
   reason: string;
 };
 
-export type IkaRebalancePolicy = {
-  dwallet: PublicKey;
+export type AgentRebalancePolicy = {
+  agentWallet: PublicKey;
   kaminoProgram: PublicKey;
   maxTransactionAmountUsdt: number;
+  privyPolicyId?: string;
+  privySignerId?: string;
+};
+
+export type IkaRebalancePolicy = AgentRebalancePolicy & {
+  dwallet?: PublicKey;
 };

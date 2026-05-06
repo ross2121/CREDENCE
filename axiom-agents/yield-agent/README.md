@@ -12,5 +12,5 @@ import { YieldAgent } from "./src";
 
 const agent = new YieldAgent();
 const decision = agent.decide(poolSnapshot, marketSnapshot);
-const txs = agent.buildRebalanceTransactions(client, decision, ikaPolicy);
+const txs = agent.buildRebalanceTransactions(client, decision, privyPolicy);
 ```

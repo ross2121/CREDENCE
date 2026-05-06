@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAxiomStore } from "@/store/use-axiom-store";
 import { demoSeed } from "@/lib/demo-api";
+import { PrivyAuthButton } from "@/components/privy-auth-button";
 
 const nav = [
   { href: "/borrow", label: "Borrow", icon: ShieldCheck },
@@ -60,6 +61,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Button variant="outline" onClick={toggleDemoMode}>
               {demoMode ? "Live mode" : "Demo mode"}
             </Button>
+            {process.env.NEXT_PUBLIC_PRIVY_APP_ID ? <PrivyAuthButton /> : null}
             <WalletMultiButton />
           </div>
         </div>

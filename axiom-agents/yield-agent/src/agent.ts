@@ -1,5 +1,9 @@
 import { AxiomClient } from "../../../sdk/src";
-import { AllocationDecision, IkaRebalancePolicy, PoolSnapshot } from "./types";
+import {
+  AgentRebalancePolicy,
+  AllocationDecision,
+  PoolSnapshot,
+} from "./types";
 import { YieldStrategy } from "./strategy";
 import { QvacYieldStrategy } from "./qvac-strategy";
 
@@ -23,16 +27,16 @@ export class YieldAgent {
   buildRebalanceTransactions(
     client: AxiomClient,
     decision: AllocationDecision,
-    policy: IkaRebalancePolicy
+    policy: AgentRebalancePolicy
   ) {
     if (decision.action === "hold") return [];
     if (decision.amountUsdt > policy.maxTransactionAmountUsdt) {
-      throw new Error("Rebalance amount exceeds Ika policy limit");
+      throw new Error("Rebalance amount exceeds agent policy limit");
     }
 
     const amount = Math.floor(decision.amountUsdt);
-    const policyCheck = client.verifyIkaPolicy(
-      policy.dwallet,
+    const policyCheck = client.verifyAgentPolicy(
+      policy.agentWallet,
       policy.kaminoProgram,
       amount
     );
@@ -44,7 +48,7 @@ export class YieldAgent {
     return [policyCheck, rebalance];
   }
 
-  buildDailyRewardClaim(policy: IkaRebalancePolicy) {
+  buildDailyRewardClaim(policy: AgentRebalancePolicy) {
     return {
       destination: policy.kaminoProgram,
       maxAmountUsdt: policy.maxTransactionAmountUsdt,

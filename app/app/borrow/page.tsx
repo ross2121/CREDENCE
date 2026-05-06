@@ -29,14 +29,19 @@ const scoringSteps = [
 
 export default function BorrowPage() {
   const { connected, publicKey } = useWallet();
-  const { credit, loanRequest, activeLoan, repaymentStream, updateLoanRequest } =
-    useAxiomStore((state) => ({
-      credit: state.credit,
-      loanRequest: state.loanRequest,
-      activeLoan: state.activeLoan,
-      repaymentStream: state.repaymentStream,
-      updateLoanRequest: state.updateLoanRequest,
-    }));
+  const {
+    credit,
+    loanRequest,
+    activeLoan,
+    repaymentStream,
+    updateLoanRequest,
+  } = useAxiomStore((state) => ({
+    credit: state.credit,
+    loanRequest: state.loanRequest,
+    activeLoan: state.activeLoan,
+    repaymentStream: state.repaymentStream,
+    updateLoanRequest: state.updateLoanRequest,
+  }));
   const repaymentProgress = Math.round(
     (activeLoan.repaidUsdt / activeLoan.principalUsdt) * 100
   );
@@ -51,7 +56,7 @@ export default function BorrowPage() {
               Private USDT credit
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Connect a wallet, bind repayments to an Ika dWallet policy, prove
+              Connect a wallet, bind repayments to Privy and AXIOM policy, prove
               a private credit tier, and request USDT from the lending pool.
             </p>
           </div>
@@ -75,7 +80,7 @@ export default function BorrowPage() {
         </div>
         <Card>
           <CardHeader>
-            <CardTitle>Wallet and dWallet</CardTitle>
+            <CardTitle>Wallet and policy</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-start gap-3 rounded-md border border-border p-4">
@@ -85,14 +90,15 @@ export default function BorrowPage() {
                   {connected ? "Wallet connected" : "Connect wallet"}
                 </p>
                 <p className="mt-1 break-all text-sm text-muted-foreground">
-                  {publicKey?.toBase58() ?? "Solana wallet required for loan requests."}
+                  {publicKey?.toBase58() ??
+                    "Solana wallet required for loan requests."}
                 </p>
               </div>
             </div>
             <div className="flex items-start gap-3 rounded-md border border-border p-4">
               <KeyRound className="mt-1 h-5 w-5 text-primary" />
               <div>
-                <p className="font-medium">Ika policy prepared</p>
+                <p className="font-medium">Privy policy prepared</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Repayments are limited to the AXIOM stream vault and capped at
                   the requested loan amount.

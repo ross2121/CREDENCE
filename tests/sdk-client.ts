@@ -106,17 +106,18 @@ describe("AxiomClient", () => {
     ]);
   });
 
-  it("formats Ika policy transaction inputs", () => {
+  it("formats agent policy transaction inputs", () => {
     const program = mockProgram();
     const client = new AxiomClient(program);
     const destination = PublicKey.unique();
 
-    client.initializeIkaPolicy({
+    client.initializeAgentPolicy({
       kind: "borrower",
       allowedDestinations: [destination],
       maxTransactionAmount: 1_000,
       originChain: "solana",
     });
+    client.verifyAgentPolicy(PublicKey.unique(), destination, 250);
 
     expect(program.calls[0][1]).to.deep.equal({ borrower: {} });
     expect(program.calls[0][2]).to.deep.equal([
@@ -125,6 +126,7 @@ describe("AxiomClient", () => {
       PublicKey.default,
     ]);
     expect(program.calls[0][3]).to.equal(1);
+    expect(program.calls[1][0]).to.equal("verifyIkaPolicy");
   });
 
   it("exports enum and fixed array helpers", () => {
