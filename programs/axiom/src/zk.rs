@@ -105,8 +105,40 @@ fn verify_groth16_backend(proof: &Groth16Proof) -> Result<()> {
 }
 
 #[cfg(not(feature = "mock-zk"))]
-fn verify_groth16_backend(_proof: &Groth16Proof) -> Result<()> {
-    err!(AxiomError::ProductionVerifierUnavailable)
+fn verify_groth16_backend(proof: &Groth16Proof) -> Result<()> {
+    use groth16_solana::groth16::Groth16Verifier;
+
+    use crate::verifying_key::VERIFYINGKEY;
+
+    const PROOF_LEN: usize = 256;
+
+    require!(
+        proof.proof.len() == PROOF_LEN,
+        AxiomError::InvalidCreditProof
+    );
+
+    let proof_a: [u8; 64] = proof.proof[0..64]
+        .try_into()
+        .map_err(|_| error!(AxiomError::InvalidCreditProof))?;
+    let proof_b: [u8; 128] = proof.proof[64..192]
+        .try_into()
+        .map_err(|_| error!(AxiomError::InvalidCreditProof))?;
+    let proof_c: [u8; 64] = proof.proof[192..256]
+        .try_into()
+        .map_err(|_| error!(AxiomError::InvalidCreditProof))?;
+    let public_inputs: [[u8; 32]; CREDIT_PUBLIC_INPUT_COUNT] = proof
+        .public_inputs
+        .clone()
+        .try_into()
+        .map_err(|_| error!(AxiomError::InvalidPublicInputs))?;
+
+    let mut verifier =
+        Groth16Verifier::new(&proof_a, &proof_b, &proof_c, &public_inputs, &VERIFYINGKEY)
+            .map_err(|_| error!(AxiomError::InvalidCreditProof))?;
+
+    verifier
+        .verify()
+        .map_err(|_| error!(AxiomError::InvalidCreditProof))
 }
 
 trait ToBytes32 {
@@ -198,5 +230,31 @@ mod tests {
         .unwrap_err();
 
         assert_eq!(err, error!(AxiomError::InvalidPublicInputs));
+    }
+}
+
+#[cfg(all(test, not(feature = "mock-zk")))]
+mod production_tests {
+    use super::*;
+
+    #[test]
+    fn verifies_generated_silver_fixture() {
+        let proof = include_bytes!("../../../tests/fixtures/zk/silver.proof.bin");
+        let public_inputs = vec![
+            [
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 2, 88,
+            ],
+            [
+                1, 42, 221, 160, 51, 197, 19, 238, 4, 153, 82, 85, 128, 32, 27, 119, 62, 6,
+                123, 127, 208, 209, 205, 170, 236, 119, 19, 76, 201, 127, 18, 204,
+            ],
+            [
+                37, 26, 33, 17, 3, 148, 9, 63, 119, 183, 225, 110, 137, 211, 172, 201, 203, 19,
+                204, 231, 85, 221, 159, 94, 59, 170, 87, 203, 236, 2, 9, 225,
+            ],
+        ];
+
+        verify_credit_proof(proof, public_inputs, CreditTier::Silver).unwrap();
     }
 }

@@ -4,11 +4,11 @@ include "circomlib/circuits/comparators.circom";
 include "circomlib/circuits/poseidon.circom";
 
 template CreditTierProof() {
-    signal private input credit_score;
-    signal private input wallet_secret;
-    signal private input wallet_salt;
-    signal private input model_secret;
-    signal private input model_salt;
+    signal input credit_score;
+    signal input wallet_secret;
+    signal input wallet_salt;
+    signal input model_secret;
+    signal input model_salt;
 
     signal input tier_threshold;
     signal input wallet_commitment;

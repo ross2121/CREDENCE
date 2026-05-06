@@ -5,6 +5,7 @@ pub mod ika;
 pub mod instructions;
 pub mod kamino;
 pub mod state;
+pub mod verifying_key;
 pub mod zk;
 
 use anchor_lang::prelude::*;
