@@ -144,7 +144,10 @@ pub mod axiom {
         instructions::ika_policy_ix::handle_verify_ika_policy(ctx, dwallet, destination, amount)
     }
 
-    pub fn rebalance_to_kamino(ctx: Context<RebalanceKamino>, amount: u64) -> Result<()> {
+    pub fn rebalance_to_kamino<'info>(
+        ctx: Context<'_, '_, '_, 'info, RebalanceKamino<'info>>,
+        amount: u64,
+    ) -> Result<()> {
         instructions::kamino_ix::handle_rebalance_to_kamino(ctx, amount)
     }
 

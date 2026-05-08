@@ -13,6 +13,7 @@ This repository now separates demo behavior from production-facing builds.
 - Devnet pool funding: `100000` AXIOM devnet USDT.
 - Kamino devnet Kvault program: `devkRngFnfp4gBc5a3LsadgbQKdPo8MSZ4prFiNSVmY`.
 - Kamino Klend program: `KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD`.
+- Kamino devnet vault states are discoverable on RPC. The current AXIOM funded pool uses AXIOM test USDT `G7u6HfeiagfxbdxXc75rDxpBfbJmv79n7vH1mtXaZSEk`, while the discovered Kamino devnet vaults use Kamino devnet mints such as `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` and wrapped SOL. A live Kamino rebalance requires initializing/funding an AXIOM pool with a mint matching the selected Kamino vault.
 - Production-style Rust builds disable default mock features with:
 
 ```sh
@@ -21,8 +22,7 @@ npm run contract:build:production
 
 - Without mock features, ZK proof verification and direct Ika CPI verification fail explicitly instead of silently using stubs.
 - The active devnet agent custody path is Privy wallet policy plus AXIOM on-chain policy. Privy policy metadata is carried by `integrations/privy-policy`, while AXIOM still enforces destination and amount checks on-chain.
-- Kamino Earn withdraw CPI is wired to the documented devnet Kvault/Klend programs. Calling it still requires a real Kamino devnet vault state, reserve, share mint, token vault, user share/token accounts, and the other accounts required by Kamino's withdraw CPI layout.
-- Kamino Earn deposit remains off-chain SDK/API only in this repo until Kamino publishes or provides the Rust CPI account layout for deposit.
+- Kamino Earn deposit and withdraw CPI are wired to the documented devnet Kvault/Klend programs. Calling either still requires a real Kamino devnet vault state, reserve list, share mint, token vault, user share/token accounts, event authority, and the remaining reserve/lending-market accounts required by Kamino's CPI layouts.
 - Devnet smoke, pool initialization, and pool funding scripts are wired:
 
 ```sh

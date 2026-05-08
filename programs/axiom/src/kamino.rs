@@ -8,7 +8,24 @@ use anchor_lang::solana_program::{
 
 pub const KVAULT_PROGRAM_ID: Pubkey = pubkey!("devkRngFnfp4gBc5a3LsadgbQKdPo8MSZ4prFiNSVmY");
 pub const KLEND_PROGRAM_ID: Pubkey = pubkey!("KLend2g3cP87fffoy8q1mQqGKjrxjC8boSyAYavgmjD");
+pub const KVAULT_DEPOSIT_DISCRIMINATOR: [u8; 8] = [242, 35, 198, 137, 82, 225, 242, 182];
 pub const KVAULT_WITHDRAW_DISCRIMINATOR: [u8; 8] = [183, 18, 70, 156, 148, 109, 161, 34];
+
+pub struct KaminoDepositCpiAccounts<'info> {
+    pub user: AccountInfo<'info>,
+    pub vault_state: AccountInfo<'info>,
+    pub token_vault: AccountInfo<'info>,
+    pub token_mint: AccountInfo<'info>,
+    pub base_vault_authority: AccountInfo<'info>,
+    pub shares_mint: AccountInfo<'info>,
+    pub user_token_ata: AccountInfo<'info>,
+    pub user_shares_ata: AccountInfo<'info>,
+    pub klend_program: AccountInfo<'info>,
+    pub token_program: AccountInfo<'info>,
+    pub shares_token_program: AccountInfo<'info>,
+    pub event_authority: AccountInfo<'info>,
+    pub kvault_program: AccountInfo<'info>,
+}
 
 pub struct KaminoWithdrawCpiAccounts<'info> {
     pub authority: AccountInfo<'info>,
@@ -36,14 +53,75 @@ pub struct KaminoWithdrawCpiAccounts<'info> {
 }
 
 #[cfg(feature = "mock-kamino")]
-pub fn cpi_kamino_deposit(_kamino_program: AccountInfo, amount: u64) -> Result<()> {
+pub fn cpi_kamino_deposit<'info>(
+    _accounts: KaminoDepositCpiAccounts<'info>,
+    amount: u64,
+    _remaining_accounts: &[AccountInfo<'info>],
+    _signer_seeds: &[&[&[u8]]],
+) -> Result<()> {
     msg!("Kamino deposit stub executed for {} USDT units", amount);
     Ok(())
 }
 
 #[cfg(not(feature = "mock-kamino"))]
-pub fn cpi_kamino_deposit(_kamino_program: AccountInfo, _amount: u64) -> Result<()> {
-    err!(crate::AxiomError::ProductionCpiUnavailable)
+pub fn cpi_kamino_deposit<'info>(
+    accounts: KaminoDepositCpiAccounts<'info>,
+    amount: u64,
+    remaining_accounts: &[AccountInfo<'info>],
+    signer_seeds: &[&[&[u8]]],
+) -> Result<()> {
+    let mut data = Vec::with_capacity(16);
+    data.extend_from_slice(&KVAULT_DEPOSIT_DISCRIMINATOR);
+    data.extend_from_slice(&amount.to_le_bytes());
+
+    let mut metas = vec![
+        AccountMeta::new(accounts.user.key(), true),
+        AccountMeta::new(accounts.vault_state.key(), false),
+        AccountMeta::new(accounts.token_vault.key(), false),
+        AccountMeta::new_readonly(accounts.token_mint.key(), false),
+        AccountMeta::new_readonly(accounts.base_vault_authority.key(), false),
+        AccountMeta::new(accounts.shares_mint.key(), false),
+        AccountMeta::new(accounts.user_token_ata.key(), false),
+        AccountMeta::new(accounts.user_shares_ata.key(), false),
+        AccountMeta::new_readonly(accounts.klend_program.key(), false),
+        AccountMeta::new_readonly(accounts.token_program.key(), false),
+        AccountMeta::new_readonly(accounts.shares_token_program.key(), false),
+        AccountMeta::new_readonly(accounts.event_authority.key(), false),
+        AccountMeta::new_readonly(accounts.kvault_program.key(), false),
+    ];
+    metas.extend(remaining_accounts.iter().map(|account| {
+        if account.is_writable {
+            AccountMeta::new(account.key(), account.is_signer)
+        } else {
+            AccountMeta::new_readonly(account.key(), account.is_signer)
+        }
+    }));
+
+    let ix = Instruction {
+        program_id: KVAULT_PROGRAM_ID,
+        accounts: metas,
+        data,
+    };
+
+    let mut account_infos = vec![
+        accounts.user,
+        accounts.vault_state,
+        accounts.token_vault,
+        accounts.token_mint,
+        accounts.base_vault_authority,
+        accounts.shares_mint,
+        accounts.user_token_ata,
+        accounts.user_shares_ata,
+        accounts.klend_program,
+        accounts.token_program,
+        accounts.shares_token_program,
+        accounts.event_authority,
+        accounts.kvault_program,
+    ];
+    account_infos.extend_from_slice(remaining_accounts);
+
+    invoke_signed(&ix, &account_infos, signer_seeds)?;
+    Ok(())
 }
 
 #[cfg(feature = "mock-kamino")]

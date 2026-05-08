@@ -3,8 +3,8 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::Token;
 
 use crate::{
-    cpi_kamino_deposit, cpi_kamino_withdraw, AxiomError, KaminoRebalanced,
-    KaminoWithdrawCpiAccounts, LendingPool, KLEND_PROGRAM_ID, KVAULT_PROGRAM_ID,
+    cpi_kamino_deposit, cpi_kamino_withdraw, AxiomError, KaminoDepositCpiAccounts,
+    KaminoRebalanced, KaminoWithdrawCpiAccounts, LendingPool, KLEND_PROGRAM_ID, KVAULT_PROGRAM_ID,
 };
 
 #[derive(Accounts)]
@@ -18,10 +18,35 @@ pub struct RebalanceKamino<'info> {
         bump = lending_pool.bump
     )]
     pub lending_pool: Account<'info, LendingPool>,
-    /// CHECK: Stored Kamino position/vault identifier for demo CPI stubs.
+    /// CHECK: Kamino Earn vault state stored on the lending pool.
+    #[account(mut)]
     pub kamino_vault: UncheckedAccount<'info>,
-    /// CHECK: Stubbed until real Kamino CPI accounts are wired.
-    pub kamino_program: UncheckedAccount<'info>,
+    /// CHECK: Token vault owned by the Kamino vault program.
+    #[account(mut)]
+    pub token_vault: UncheckedAccount<'info>,
+    /// CHECK: Underlying token mint.
+    pub token_mint: UncheckedAccount<'info>,
+    /// CHECK: Kamino base vault authority PDA.
+    pub base_vault_authority: UncheckedAccount<'info>,
+    /// CHECK: Kamino shares mint.
+    #[account(mut)]
+    pub shares_mint: UncheckedAccount<'info>,
+    /// CHECK: AXIOM pool token account owned by the lending pool PDA.
+    #[account(mut)]
+    pub user_token_ata: UncheckedAccount<'info>,
+    /// CHECK: AXIOM pool shares token account owned by the lending pool PDA.
+    #[account(mut)]
+    pub user_shares_ata: UncheckedAccount<'info>,
+    /// CHECK: Kamino event authority PDA.
+    pub event_authority: UncheckedAccount<'info>,
+    /// CHECK: Kamino vault devnet program.
+    #[account(address = KVAULT_PROGRAM_ID)]
+    pub kvault_program: UncheckedAccount<'info>,
+    /// CHECK: Kamino lending program.
+    #[account(address = KLEND_PROGRAM_ID)]
+    pub klend_program: UncheckedAccount<'info>,
+    pub token_program: Program<'info, Token>,
+    pub shares_token_program: Program<'info, Token>,
 }
 
 #[derive(Accounts)]
@@ -90,10 +115,35 @@ pub struct RebalanceFromKamino<'info> {
     pub shares_token_program: Program<'info, Token>,
 }
 
-pub fn handle_rebalance_to_kamino(ctx: Context<RebalanceKamino>, amount: u64) -> Result<()> {
+pub fn handle_rebalance_to_kamino<'info>(
+    ctx: Context<'_, '_, '_, 'info, RebalanceKamino<'info>>,
+    amount: u64,
+) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
     ctx.accounts.lending_pool.rebalance_to_kamino(amount, now)?;
-    cpi_kamino_deposit(ctx.accounts.kamino_program.to_account_info(), amount)?;
+    let usdt_vault = ctx.accounts.lending_pool.usdt_vault;
+    let bump = ctx.accounts.lending_pool.bump;
+    let signer_seeds: &[&[&[u8]]] = &[&[b"lending_pool", usdt_vault.as_ref(), &[bump]]];
+    cpi_kamino_deposit(
+        KaminoDepositCpiAccounts {
+            user: ctx.accounts.lending_pool.to_account_info(),
+            vault_state: ctx.accounts.kamino_vault.to_account_info(),
+            token_vault: ctx.accounts.token_vault.to_account_info(),
+            token_mint: ctx.accounts.token_mint.to_account_info(),
+            base_vault_authority: ctx.accounts.base_vault_authority.to_account_info(),
+            shares_mint: ctx.accounts.shares_mint.to_account_info(),
+            user_token_ata: ctx.accounts.user_token_ata.to_account_info(),
+            user_shares_ata: ctx.accounts.user_shares_ata.to_account_info(),
+            klend_program: ctx.accounts.klend_program.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+            shares_token_program: ctx.accounts.shares_token_program.to_account_info(),
+            event_authority: ctx.accounts.event_authority.to_account_info(),
+            kvault_program: ctx.accounts.kvault_program.to_account_info(),
+        },
+        amount,
+        ctx.remaining_accounts,
+        signer_seeds,
+    )?;
     emit!(KaminoRebalanced {
         pool: ctx.accounts.lending_pool.key(),
         to_kamino: true,
