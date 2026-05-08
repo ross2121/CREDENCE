@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
 import { StatusState } from "@/components/status-state";
+import { useLivePool } from "@/hooks/use-live-pool";
 import { demoApi } from "@/lib/demo-api";
 import { useAxiomStore } from "@/store/use-axiom-store";
 
@@ -22,9 +23,20 @@ export default function AnalyticsPage() {
     analytics: state.analytics,
     lenderPosition: state.lenderPosition,
   }));
-  const utilization = Math.round(
-    (pool.totalBorrowedUsdt / pool.totalDepositsUsdt) * 100
-  );
+  const livePool = useLivePool();
+  const live = livePool.data;
+  const totalDeposits = live?.totalDepositsUsdc ?? pool.totalDepositsUsdt;
+  const totalBorrowed = live?.totalBorrowedUsdc ?? pool.totalBorrowedUsdt;
+  const kaminoAllocation =
+    live?.kaminoAllocatedUsdc ?? pool.kaminoAllocationUsdt;
+  const utilization = live
+    ? Math.round(live.utilizationBps / 100)
+    : Math.round((pool.totalBorrowedUsdt / pool.totalDepositsUsdt) * 100);
+  const poolStatus = livePool.loading
+    ? "loading"
+    : livePool.error
+    ? "error"
+    : "success";
   const totalTorque = analytics.torqueRewards.reduce(
     (sum, point) => sum + point.value,
     0
@@ -46,23 +58,26 @@ export default function AnalyticsPage() {
       <section className="grid gap-4 md:grid-cols-4">
         <Metric
           label="Total deposits"
-          value={`$${pool.totalDepositsUsdt.toLocaleString()}`}
+          value={`$${totalDeposits.toLocaleString()}`}
         />
         <Metric
           label="Total borrowed"
-          value={`$${pool.totalBorrowedUsdt.toLocaleString()}`}
+          value={`$${totalBorrowed.toLocaleString()}`}
         />
         <Metric label="Utilization" value={`${utilization}%`} />
         <Metric
-          label="Repayment success"
-          value={`${analytics.repaymentSuccess.at(-1)?.value ?? 0}%`}
+          label="Kamino allocation"
+          value={`$${kaminoAllocation.toLocaleString()}`}
         />
       </section>
       <section className="grid gap-4 md:grid-cols-2">
         <StatusState
-          message={demoApi.analytics.message}
-          state={demoApi.analytics.state}
-          title="Analytics fixtures"
+          message={
+            livePool.error ??
+            "Protocol capital totals are loaded from AXIOM devnet accounts."
+          }
+          state={poolStatus}
+          title="Devnet analytics"
         />
         <StatusState
           message={demoApi.borrower.message}
@@ -110,7 +125,7 @@ export default function AnalyticsPage() {
             <InfoPanel
               icon={<CircleDollarSign className="h-5 w-5" />}
               label="Idle in Kamino"
-              value={`$${pool.kaminoAllocationUsdt.toLocaleString()}`}
+              value={`$${kaminoAllocation.toLocaleString()}`}
             />
             <InfoPanel
               icon={<Activity className="h-5 w-5" />}
@@ -216,7 +231,10 @@ function ProgressRow({
         </span>
       </div>
       <div className="h-2 rounded-sm bg-muted">
-        <div className="h-2 rounded-sm bg-primary" style={{ width: `${width}%` }} />
+        <div
+          className="h-2 rounded-sm bg-primary"
+          style={{ width: `${width}%` }}
+        />
       </div>
     </div>
   );

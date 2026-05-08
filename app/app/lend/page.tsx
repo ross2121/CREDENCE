@@ -11,11 +11,13 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
 import { StatusState } from "@/components/status-state";
+import { useLivePool } from "@/hooks/use-live-pool";
 import { demoApi } from "@/lib/demo-api";
 import { useAxiomStore } from "@/store/use-axiom-store";
 
@@ -39,12 +41,35 @@ export default function LendPage() {
     yieldAllocation: state.yieldAllocation,
     updateLenderAction: state.updateLenderAction,
   }));
-  const utilization = Math.round(
-    (pool.totalBorrowedUsdt / pool.totalDepositsUsdt) * 100
+  const livePool = useLivePool();
+  const live = livePool.data;
+  const displayPool = useMemo(
+    () => ({
+      totalDeposits: live?.totalDepositsUsdc ?? pool.totalDepositsUsdt,
+      totalBorrowed: live?.totalBorrowedUsdc ?? pool.totalBorrowedUsdt,
+      liquidVault: live?.liquidVaultUsdc ?? yieldAllocation.axiomPoolUsdt,
+      kamino: live?.kaminoAllocatedUsdc ?? yieldAllocation.kaminoUsdt,
+      utilizationBps:
+        live?.utilizationBps ??
+        Math.round((pool.totalBorrowedUsdt / pool.totalDepositsUsdt) * 10_000),
+      baseInterestBps:
+        live?.baseInterestBps ?? yieldAllocation.borrowerInterestApyBps,
+      kaminoAllocationBps:
+        live?.kaminoAllocationBps ??
+        Math.round(
+          (yieldAllocation.kaminoUsdt / pool.totalDepositsUsdt) * 10_000
+        ),
+      lastRebalance: live?.lastRebalance ?? yieldAllocation.lastRebalance,
+    }),
+    [live, pool, yieldAllocation]
   );
-  const kaminoShare = Math.round(
-    (yieldAllocation.kaminoUsdt / pool.totalDepositsUsdt) * 100
-  );
+  const utilization = Math.round(displayPool.utilizationBps / 100);
+  const kaminoShare = Math.round(displayPool.kaminoAllocationBps / 100);
+  const statusState = livePool.loading
+    ? "loading"
+    : livePool.error
+    ? "error"
+    : "success";
 
   return (
     <div className="space-y-6">
@@ -52,12 +77,12 @@ export default function LendPage() {
         <div>
           <Badge>Lender</Badge>
           <h1 className="mt-3 text-3xl font-semibold tracking-normal">
-            USDT lending dashboard
+            USDC lending dashboard
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Supply USDT, track borrower demand, and let the local yield agent
-            route idle liquidity through Kamino under Privy and AXIOM policy
-            limits.
+            Supply devnet USDC, track borrower demand, and let the local yield
+            agent route idle liquidity through Kamino under Privy and AXIOM
+            policy limits.
           </p>
         </div>
         <Card>
@@ -67,7 +92,7 @@ export default function LendPage() {
           <CardContent className="grid gap-3 sm:grid-cols-2">
             <InfoPanel
               icon={<Wallet className="h-5 w-5" />}
-              label="Wallet USDT"
+              label="Wallet USDC"
               value={`$${lenderPosition.walletUsdt.toLocaleString()}`}
             />
             <InfoPanel
@@ -82,24 +107,27 @@ export default function LendPage() {
       <section className="grid gap-4 md:grid-cols-4">
         <Metric
           label="Deposits"
-          value={`$${pool.totalDepositsUsdt.toLocaleString()}`}
+          value={`$${displayPool.totalDeposits.toLocaleString()}`}
         />
         <Metric
           label="Borrowed"
-          value={`$${pool.totalBorrowedUsdt.toLocaleString()}`}
+          value={`$${displayPool.totalBorrowed.toLocaleString()}`}
         />
         <Metric label="Utilization" value={`${utilization}%`} />
         <Metric
-          label="Live earnings"
-          value={`$${lenderPosition.dailyEarningsUsdt.toFixed(2)}/day`}
-          detail={`$${lenderPosition.earnedUsdt.toLocaleString()} earned`}
+          label="Base rate"
+          value={`${(displayPool.baseInterestBps / 100).toFixed(2)}%`}
+          detail={live ? "Read from devnet pool" : "Demo fallback"}
         />
       </section>
       <section className="grid gap-4 md:grid-cols-2">
         <StatusState
-          message={demoApi.lender.message}
-          state={demoApi.lender.state}
-          title="Yield stream"
+          message={
+            livePool.error ??
+            "Connected to AXIOM devnet pool, USDC vault, and Kamino shares account."
+          }
+          state={statusState}
+          title="Devnet pool"
         />
         <StatusState
           message={demoApi.borrower.message}
@@ -155,12 +183,12 @@ export default function LendPage() {
               <InfoPanel
                 icon={<Coins className="h-5 w-5" />}
                 label="AXIOM pool liquidity"
-                value={`$${yieldAllocation.axiomPoolUsdt.toLocaleString()}`}
+                value={`$${displayPool.liquidVault.toLocaleString()}`}
               />
               <InfoPanel
                 icon={<RefreshCw className="h-5 w-5" />}
                 label="Kamino allocation"
-                value={`$${yieldAllocation.kaminoUsdt.toLocaleString()}`}
+                value={`$${displayPool.kamino.toLocaleString()}`}
               />
             </div>
             <div>
@@ -175,9 +203,20 @@ export default function LendPage() {
                 />
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Last rebalance: {yieldAllocation.lastRebalance}
+                Last rebalance: {displayPool.lastRebalance}
               </p>
             </div>
+            {live ? (
+              <div className="grid gap-2 rounded-md border border-border p-3 text-xs text-muted-foreground">
+                <AddressRow label="Pool" value={live.lendingPool} />
+                <AddressRow label="USDC vault" value={live.usdcVault} />
+                <AddressRow
+                  label="Kamino shares"
+                  value={live.kaminoSharesAccount}
+                />
+                <AddressRow label="Kamino vault" value={live.kaminoVault} />
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       </section>
@@ -191,7 +230,7 @@ export default function LendPage() {
             {apyRows.map((row) => {
               const value =
                 row.key === "borrower"
-                  ? yieldAllocation.borrowerInterestApyBps
+                  ? displayPool.baseInterestBps
                   : row.key === "kamino"
                   ? yieldAllocation.kaminoApyBps
                   : yieldAllocation.blendedApyBps;
@@ -231,7 +270,7 @@ export default function LendPage() {
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
                 Current utilization keeps supply incentives available for new
-                USDT deposits above $100.
+                USDC deposits above $100.
               </p>
             </div>
             <Button className="w-full" variant="secondary">
@@ -262,6 +301,15 @@ export default function LendPage() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function AddressRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid gap-1 sm:grid-cols-[110px_1fr]">
+      <span>{label}</span>
+      <span className="truncate font-mono">{value}</span>
     </div>
   );
 }
