@@ -107,6 +107,12 @@ export class AxiomClient {
     return this.program.methods.fundRepaymentStream(toAnchorAmount(amount));
   }
 
+  fundRepaymentStreamWithPolicy(amount: bigint | number | string) {
+    return this.program.methods.fundRepaymentStreamWithPolicy(
+      toAnchorAmount(amount)
+    );
+  }
+
   claimRepayments() {
     return this.program.methods.claimRepayments();
   }

@@ -15,6 +15,7 @@ import {
   deriveRepaymentStream,
 } from "@/lib/borrower-state";
 import { AXIOM_DEVNET } from "@/lib/devnet-pool";
+import { deriveIkaPolicy } from "@/lib/policy-state";
 import {
   DEVNET_SILVER_PROOF_BASE64,
   DEVNET_SILVER_PUBLIC_INPUTS,
@@ -41,6 +42,9 @@ const REGISTER_CREDIT_PROOF_DISCRIMINATOR = Uint8Array.from([
 const REQUEST_LOAN_DISCRIMINATOR = Uint8Array.from([
   120, 2, 7, 7, 1, 219, 235, 187,
 ]);
+const INITIALIZE_IKA_POLICY_DISCRIMINATOR = Uint8Array.from([
+  210, 26, 40, 85, 131, 201, 170, 12,
+]);
 const DISBURSE_LOAN_DISCRIMINATOR = Uint8Array.from([
   115, 159, 152, 253, 201, 29, 29, 174,
 ]);
@@ -49,6 +53,9 @@ const INIT_REPAYMENT_STREAM_DISCRIMINATOR = Uint8Array.from([
 ]);
 const FUND_REPAYMENT_STREAM_DISCRIMINATOR = Uint8Array.from([
   111, 174, 212, 231, 145, 102, 72, 165,
+]);
+const FUND_REPAYMENT_STREAM_WITH_POLICY_DISCRIMINATOR = Uint8Array.from([
+  176, 59, 216, 31, 138, 209, 126, 204,
 ]);
 const CLAIM_REPAYMENTS_DISCRIMINATOR = Uint8Array.from([
   237, 82, 234, 34, 156, 45, 222, 16,
@@ -99,6 +106,18 @@ function encodeU64(value: bigint) {
 function encodeI64(value: bigint) {
   const bytes = new Uint8Array(8);
   new DataView(bytes.buffer).setBigInt64(0, value, true);
+  return bytes;
+}
+
+function encodeBool(value: boolean) {
+  return Uint8Array.from([value ? 1 : 0]);
+}
+
+function encodeOriginChain(chain: string) {
+  const bytes = new Uint8Array(16);
+  new TextEncoder().encode(chain.slice(0, 16)).forEach((byte, index) => {
+    bytes[index] = byte;
+  });
   return bytes;
 }
 
@@ -413,6 +432,62 @@ export async function requestLoanFromWallet({
   return sendAndConfirm(connection, wallet, new Transaction().add(ix));
 }
 
+export async function initializeBorrowerPrivyPolicyFromWallet({
+  delegatedWallet,
+  maxAmountUsdc,
+  streamVault,
+  connection,
+  wallet,
+}: {
+  delegatedWallet: PublicKey;
+  maxAmountUsdc: number;
+  streamVault: PublicKey;
+  connection: Connection;
+  wallet: WalletContextState;
+}) {
+  if (!wallet.publicKey) throw new Error("Connect a wallet first");
+
+  const ikaPolicy = deriveIkaPolicy(wallet.publicKey, delegatedWallet);
+  const existing = await connection.getAccountInfo(ikaPolicy, "confirmed");
+  if (existing) {
+    throw new Error("Borrower policy already exists for this delegated wallet");
+  }
+
+  const emptyPubkey = PublicKey.default.toBytes();
+  const data = new Uint8Array(8 + 1 + 96 + 1 + 8 + 1 + 16);
+  let offset = 0;
+  data.set(INITIALIZE_IKA_POLICY_DISCRIMINATOR, offset);
+  offset += 8;
+  data[offset] = 0;
+  offset += 1;
+  data.set(streamVault.toBytes(), offset);
+  offset += 32;
+  data.set(emptyPubkey, offset);
+  offset += 32;
+  data.set(emptyPubkey, offset);
+  offset += 32;
+  data[offset] = 1;
+  offset += 1;
+  data.set(encodeU64(BigInt(Math.floor(maxAmountUsdc * 1_000_000))), offset);
+  offset += 8;
+  data.set(encodeBool(false), offset);
+  offset += 1;
+  data.set(encodeOriginChain("solana"), offset);
+
+  const ix = new TransactionInstruction({
+    programId: AXIOM_DEVNET.programId,
+    keys: [
+      { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+      { pubkey: ikaPolicy, isSigner: false, isWritable: true },
+      { pubkey: delegatedWallet, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data: Buffer.from(data),
+  });
+
+  return sendAndConfirm(connection, wallet, new Transaction().add(ix));
+}
+
 export async function disburseLoanFromWallet({
   borrower,
   loan,
@@ -552,6 +627,68 @@ export async function fundRepaymentStreamFromWallet({
   });
 
   return sendAndConfirm(connection, wallet, new Transaction().add(ix));
+}
+
+export async function buildFundRepaymentStreamWithPolicyTransaction({
+  owner,
+  delegatedWallet,
+  loan,
+  amountUsdc,
+  connection,
+}: {
+  owner: PublicKey;
+  delegatedWallet: PublicKey;
+  loan: PublicKey;
+  amountUsdc: number;
+  connection: Connection;
+}) {
+  const transaction = new Transaction();
+  const repaymentStream = deriveRepaymentStream(loan);
+  const streamAccount = await connection.getAccountInfo(
+    repaymentStream,
+    "confirmed"
+  );
+  if (!streamAccount) {
+    throw new Error("Initialize the repayment stream before delegated funding");
+  }
+
+  const agentUsdc = await ensureAssociatedTokenAccount(
+    transaction,
+    connection,
+    delegatedWallet,
+    AXIOM_DEVNET.usdcMint,
+    delegatedWallet
+  );
+  const streamVault = getAssociatedTokenAddress(
+    AXIOM_DEVNET.usdcMint,
+    repaymentStream
+  );
+  const ikaPolicy = deriveIkaPolicy(owner, delegatedWallet);
+
+  transaction.add(
+    new TransactionInstruction({
+      programId: AXIOM_DEVNET.programId,
+      keys: [
+        { pubkey: delegatedWallet, isSigner: true, isWritable: true },
+        { pubkey: agentUsdc, isSigner: false, isWritable: true },
+        { pubkey: loan, isSigner: false, isWritable: false },
+        { pubkey: repaymentStream, isSigner: false, isWritable: true },
+        { pubkey: streamVault, isSigner: false, isWritable: true },
+        { pubkey: ikaPolicy, isSigner: false, isWritable: false },
+        { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      ],
+      data: amountData(
+        FUND_REPAYMENT_STREAM_WITH_POLICY_DISCRIMINATOR,
+        amountUsdc
+      ),
+    })
+  );
+
+  transaction.feePayer = delegatedWallet;
+  transaction.recentBlockhash = (
+    await connection.getLatestBlockhash("confirmed")
+  ).blockhash;
+  return transaction;
 }
 
 export async function claimRepaymentsToPoolFromWallet({

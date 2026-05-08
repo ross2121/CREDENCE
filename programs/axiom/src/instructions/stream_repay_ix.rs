@@ -1,7 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
-use crate::{AxiomError, Loan, RepaymentClaimed, RepaymentStream, RepaymentStreamArgs};
+use crate::{
+    AxiomError, IkaPolicy, IkaPolicyKind, Loan, RepaymentClaimed, RepaymentStream,
+    RepaymentStreamArgs,
+};
 
 #[derive(Accounts)]
 pub struct InitRepayStream<'info> {
@@ -35,6 +38,32 @@ pub struct FundStream<'info> {
     pub repayment_stream: Account<'info, RepaymentStream>,
     #[account(mut)]
     pub stream_vault: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct FundStreamWithPolicy<'info> {
+    #[account(mut)]
+    pub agent_wallet: Signer<'info>,
+    #[account(
+        mut,
+        constraint = agent_usdt.owner == agent_wallet.key() @ AxiomError::Unauthorized
+    )]
+    pub agent_usdt: Account<'info, TokenAccount>,
+    pub loan: Account<'info, Loan>,
+    #[account(
+        mut,
+        has_one = loan,
+        has_one = stream_vault @ AxiomError::InvalidVault
+    )]
+    pub repayment_stream: Account<'info, RepaymentStream>,
+    #[account(mut)]
+    pub stream_vault: Account<'info, TokenAccount>,
+    #[account(
+        seeds = [b"ika_policy", loan.borrower.as_ref(), agent_wallet.key().as_ref()],
+        bump = ika_policy.bump
+    )]
+    pub ika_policy: Account<'info, IkaPolicy>,
     pub token_program: Program<'info, Token>,
 }
 
@@ -101,6 +130,28 @@ pub fn handle_fund_repayment_stream(ctx: Context<FundStream>, amount: u64) -> Re
     token::transfer(ctx.accounts.fund_transfer_context(), amount)
 }
 
+pub fn handle_fund_repayment_stream_with_policy(
+    ctx: Context<FundStreamWithPolicy>,
+    amount: u64,
+) -> Result<()> {
+    require!(
+        ctx.accounts.ika_policy.kind == IkaPolicyKind::Borrower,
+        AxiomError::InvalidIkaPolicy
+    );
+    require!(
+        ctx.accounts.ika_policy.owner == ctx.accounts.loan.borrower,
+        AxiomError::Unauthorized
+    );
+    ctx.accounts.ika_policy.verify_action(
+        ctx.accounts.agent_wallet.key(),
+        ctx.accounts.stream_vault.key(),
+        amount,
+    )?;
+
+    ctx.accounts.repayment_stream.fund(amount)?;
+    token::transfer(ctx.accounts.fund_transfer_context(), amount)
+}
+
 pub fn handle_claim_repayments(ctx: Context<ClaimRepayments>) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
     let amount = ctx
@@ -144,6 +195,19 @@ impl<'info> FundStream<'info> {
                 from: self.borrower_usdt.to_account_info(),
                 to: self.stream_vault.to_account_info(),
                 authority: self.borrower.to_account_info(),
+            },
+        )
+    }
+}
+
+impl<'info> FundStreamWithPolicy<'info> {
+    fn fund_transfer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        CpiContext::new(
+            self.token_program.to_account_info(),
+            Transfer {
+                from: self.agent_usdt.to_account_info(),
+                to: self.stream_vault.to_account_info(),
+                authority: self.agent_wallet.to_account_info(),
             },
         )
     }

@@ -109,6 +109,13 @@ pub mod axiom {
         instructions::stream_repay_ix::handle_fund_repayment_stream(ctx, amount)
     }
 
+    pub fn fund_repayment_stream_with_policy(
+        ctx: Context<FundStreamWithPolicy>,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::stream_repay_ix::handle_fund_repayment_stream_with_policy(ctx, amount)
+    }
+
     pub fn claim_repayments(ctx: Context<ClaimRepayments>) -> Result<()> {
         instructions::stream_repay_ix::handle_claim_repayments(ctx)
     }

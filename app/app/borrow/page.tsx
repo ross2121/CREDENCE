@@ -19,6 +19,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PrivyRepaymentPanel } from "@/components/privy-repayment-panel";
 import { Metric } from "@/components/metric";
 import { StatusState } from "@/components/status-state";
 import { useBorrowerState } from "@/hooks/use-borrower-state";
@@ -602,6 +603,27 @@ export default function BorrowPage() {
           </CardContent>
         </Card>
       </section>
+
+      {process.env.NEXT_PUBLIC_PRIVY_APP_ID ? (
+        <section>
+          <PrivyRepaymentPanel
+            connection={connection}
+            loanAddress={liveLoan?.address ?? null}
+            loanBorrower={liveLoan?.borrower ?? null}
+            onActionState={(status, message) =>
+              setActionState({ status, message })
+            }
+            onRefresh={async () => {
+              await Promise.all([borrowerState.refresh(), livePool.refresh()]);
+            }}
+            ownerWallet={publicKey}
+            repaymentAmountUsdc={repaymentAmountUsdc}
+            streamVault={liveStream?.streamVault ?? null}
+            totalDueUsdc={displayedStream.totalDueUsdc}
+            wallet={wallet}
+          />
+        </section>
+      ) : null}
     </div>
   );
 }
