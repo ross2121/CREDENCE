@@ -18,6 +18,10 @@ pub enum AxiomError {
     Unauthorized,
     #[msg("Loan is not active")]
     InvalidLoanStatus,
+    #[msg("Loan has already been disbursed")]
+    LoanAlreadyDisbursed,
+    #[msg("Loan must be disbursed before the repayment stream can start")]
+    LoanNotDisbursed,
     #[msg("Credit proof has expired; must re-score with QVAC agent")]
     CreditProofExpired,
     #[msg("Loan amount exceeds tier maximum")]

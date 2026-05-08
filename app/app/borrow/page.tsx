@@ -7,10 +7,12 @@ import {
   CircleDollarSign,
   Clock3,
   KeyRound,
+  Send,
   ShieldCheck,
   SlidersHorizontal,
   Wallet,
 } from "lucide-react";
+import { PublicKey } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useState } from "react";
@@ -20,7 +22,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
 import { StatusState } from "@/components/status-state";
 import { useBorrowerState } from "@/hooks/use-borrower-state";
+import { useLivePool } from "@/hooks/use-live-pool";
 import {
+  claimRepaymentsToPoolFromWallet,
+  closeRepaymentStreamFromWallet,
+  disburseLoanFromWallet,
+  fundRepaymentStreamFromWallet,
+  initRepaymentStreamFromWallet,
   registerFixtureCreditProof,
   requestLoanFromWallet,
 } from "@/lib/axiom-actions";
@@ -50,7 +58,9 @@ export default function BorrowPage() {
     status: "idle",
     message: "Connect a wallet to register a proof or request a loan.",
   });
+  const [repaymentAmountUsdc, setRepaymentAmountUsdc] = useState(1);
   const borrowerState = useBorrowerState(publicKey);
+  const livePool = useLivePool();
   const {
     credit,
     loanRequest,
@@ -66,6 +76,7 @@ export default function BorrowPage() {
   }));
   const liveProof = borrowerState.data?.creditProof;
   const liveLoan = borrowerState.data?.loan;
+  const liveStream = borrowerState.data?.repaymentStream;
   const effectiveTier =
     (liveProof?.tier ?? credit.tier) as keyof typeof tierConfig;
   const effectiveTierConfig = tierConfig[effectiveTier];
@@ -88,6 +99,25 @@ export default function BorrowPage() {
     apyBps: liveLoan?.interestBps ?? effectiveTierConfig.interestBps,
     dueDate: liveLoan?.dueDate ?? activeLoan.dueDate,
     status: liveLoan?.status ?? activeLoan.status,
+    disbursed: liveLoan?.disbursed ?? false,
+    outstandingPrincipalUsdt:
+      liveLoan?.outstandingPrincipalUsdc ??
+      Math.max(activeLoan.principalUsdt - activeLoan.repaidUsdt, 0),
+  };
+  const displayedStream = {
+    healthBps: liveStream?.healthBps ?? repaymentStream.healthBps,
+    accruedUsdc: liveStream?.accruedUsdc ?? repaymentStream.accruedUsdt,
+    claimableUsdc: liveStream?.claimableUsdc ?? repaymentStream.nextClaimUsdt,
+    fundedUsdc: liveStream?.fundedUsdc ?? repaymentStream.fundedUsdt,
+    totalDueUsdc:
+      liveStream?.totalDueUsdc ??
+      Math.max(displayedLoan.principalUsdt, repaymentStream.fundedUsdt),
+    availableVaultUsdc:
+      liveStream?.availableVaultUsdc ??
+      Math.max(repaymentStream.fundedUsdt - repaymentStream.accruedUsdt, 0),
+    streamVault: liveStream?.streamVault ?? "Not initialized",
+    endDate: liveStream?.endDate ?? displayedLoan.dueDate,
+    canClose: liveStream?.canClose ?? false,
   };
   const proofWarning =
     liveProof && liveProof.maxLoanUsdc < 1
@@ -112,28 +142,118 @@ export default function BorrowPage() {
     : borrowerState.error
     ? "error"
     : "success";
+  const isPoolAuthority =
+    !!livePool.data?.authority && publicKey?.toBase58() === livePool.data.authority;
+  const isBorrowerWallet =
+    !!liveLoan?.borrower && publicKey?.toBase58() === liveLoan.borrower;
+  const canDisburse =
+    !!liveLoan &&
+    liveLoan.status === "Active" &&
+    !liveLoan.disbursed &&
+    isPoolAuthority &&
+    actionState.status !== "loading";
+  const canInitStream =
+    !!liveLoan &&
+    liveLoan.status === "Active" &&
+    liveLoan.disbursed &&
+    !liveStream &&
+    isBorrowerWallet &&
+    actionState.status !== "loading";
+  const canFundStream =
+    !!liveStream &&
+    isBorrowerWallet &&
+    repaymentAmountUsdc > 0 &&
+    actionState.status !== "loading";
+  const canClaimStream =
+    !!liveStream &&
+    isPoolAuthority &&
+    displayedStream.claimableUsdc > 0 &&
+    actionState.status !== "loading";
+  const canCloseStream =
+    !!liveStream &&
+    displayedStream.canClose &&
+    isBorrowerWallet &&
+    actionState.status !== "loading";
 
-  async function runAction(action: "proof" | "loan") {
+  async function runAction(
+    action:
+      | "proof"
+      | "loan"
+      | "disburse"
+      | "initStream"
+      | "fundStream"
+      | "claimStream"
+      | "closeStream"
+  ) {
     setActionState({
       status: "loading",
-      message:
-        action === "proof"
-          ? "Waiting for wallet approval to register the devnet credit proof."
-          : "Waiting for wallet approval to create the loan request.",
+      message: {
+        proof: "Waiting for wallet approval to register the devnet credit proof.",
+        loan: "Waiting for wallet approval to create the loan request.",
+        disburse: "Waiting for pool-authority approval to disburse the loan.",
+        initStream: "Waiting for borrower approval to initialize the stream vault.",
+        fundStream: "Waiting for borrower approval to fund the repayment stream.",
+        claimStream: "Waiting for pool-authority approval to claim repayments.",
+        closeStream: "Waiting for borrower approval to close the repaid stream.",
+      }[action],
     });
 
     try {
-      const signature =
-        action === "proof"
-          ? await registerFixtureCreditProof({ connection, wallet })
-          : await requestLoanFromWallet({
-              amountUsdc: loanRequest.principalUsdt,
-              durationDays: loanRequest.durationDays,
-              collateralUsdc: derivedCollateralUsdt,
-              connection,
-              wallet,
-            });
-      await borrowerState.refresh();
+      let signature: string;
+      if (action === "proof") {
+        signature = await registerFixtureCreditProof({ connection, wallet });
+      } else if (action === "loan") {
+        signature = await requestLoanFromWallet({
+          amountUsdc: loanRequest.principalUsdt,
+          durationDays: loanRequest.durationDays,
+          collateralUsdc: derivedCollateralUsdt,
+          connection,
+          wallet,
+        });
+      } else {
+        if (!liveLoan) {
+          throw new Error("No live loan found for this wallet");
+        }
+
+        const loan = new PublicKey(liveLoan.address);
+        const borrower = new PublicKey(liveLoan.borrower);
+
+        if (action === "disburse") {
+          signature = await disburseLoanFromWallet({
+            borrower,
+            loan,
+            connection,
+            wallet,
+          });
+        } else if (action === "initStream") {
+          signature = await initRepaymentStreamFromWallet({
+            loan,
+            connection,
+            wallet,
+          });
+        } else if (action === "fundStream") {
+          signature = await fundRepaymentStreamFromWallet({
+            loan,
+            amountUsdc: repaymentAmountUsdc,
+            connection,
+            wallet,
+          });
+        } else if (action === "claimStream") {
+          signature = await claimRepaymentsToPoolFromWallet({
+            loan,
+            connection,
+            wallet,
+          });
+        } else {
+          signature = await closeRepaymentStreamFromWallet({
+            loan,
+            connection,
+            wallet,
+          });
+        }
+      }
+
+      await Promise.all([borrowerState.refresh(), livePool.refresh()]);
       setActionState({
         status: "success",
         message: `Confirmed ${signature.slice(0, 8)}...${signature.slice(-8)}`,
@@ -357,6 +477,16 @@ export default function BorrowPage() {
                 label="Due"
                 value={displayedLoan.dueDate}
               />
+              <InfoPanel
+                icon={<Activity className="h-5 w-5" />}
+                label="Outstanding"
+                value={`$${displayedLoan.outstandingPrincipalUsdt.toLocaleString()}`}
+              />
+              <InfoPanel
+                icon={<Send className="h-5 w-5" />}
+                label="Funding"
+                value={displayedLoan.disbursed ? "Disbursed" : "Requested"}
+              />
             </div>
             <div>
               <div className="mb-2 flex justify-between text-sm">
@@ -371,6 +501,20 @@ export default function BorrowPage() {
               </div>
             </div>
             <Badge>{displayedLoan.status}</Badge>
+            <Button
+              className="w-full"
+              disabled={!canDisburse}
+              onClick={() => void runAction("disburse")}
+              variant="outline"
+            >
+              Disburse loan
+            </Button>
+            {!isPoolAuthority && liveLoan && !liveLoan.disbursed ? (
+              <p className="text-sm text-muted-foreground">
+                Pool authority wallet is required to release principal from the
+                AXIOM pool.
+              </p>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -378,22 +522,83 @@ export default function BorrowPage() {
           <CardHeader>
             <CardTitle>Repayment stream health</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
-            <InfoPanel
-              icon={<ShieldCheck className="h-5 w-5" />}
-              label="Health"
-              value={`${repaymentStream.healthBps / 100}%`}
-            />
-            <InfoPanel
-              icon={<Activity className="h-5 w-5" />}
-              label="Accrued"
-              value={`$${repaymentStream.accruedUsdt.toLocaleString()}`}
-            />
-            <InfoPanel
-              icon={<CircleDollarSign className="h-5 w-5" />}
-              label="Next claim"
-              value={`$${repaymentStream.nextClaimUsdt.toLocaleString()}`}
-            />
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <InfoPanel
+                icon={<ShieldCheck className="h-5 w-5" />}
+                label="Health"
+                value={`${(displayedStream.healthBps / 100).toFixed(2)}%`}
+              />
+              <InfoPanel
+                icon={<Activity className="h-5 w-5" />}
+                label="Accrued"
+                value={`$${displayedStream.accruedUsdc.toLocaleString()}`}
+              />
+              <InfoPanel
+                icon={<CircleDollarSign className="h-5 w-5" />}
+                label="Claimable"
+                value={`$${displayedStream.claimableUsdc.toLocaleString()}`}
+              />
+              <InfoPanel
+                icon={<Send className="h-5 w-5" />}
+                label="Funded"
+                value={`$${displayedStream.fundedUsdc.toLocaleString()}`}
+              />
+            </div>
+            <div className="rounded-md border border-border bg-muted p-3">
+              <div className="grid gap-3 md:grid-cols-2">
+                <InfoRow label="Total due" value={`$${displayedStream.totalDueUsdc.toLocaleString()}`} />
+                <InfoRow label="Stream ends" value={displayedStream.endDate} />
+                <InfoRow label="Vault balance" value={`$${displayedStream.availableVaultUsdc.toLocaleString()}`} />
+                <InfoRow label="Stream vault" value={displayedStream.streamVault} />
+              </div>
+            </div>
+            <label className="space-y-2">
+              <span className="text-sm font-medium">Repayment amount</span>
+              <input
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                min={0.01}
+                onChange={(event) =>
+                  setRepaymentAmountUsdc(Number(event.target.value))
+                }
+                step="0.01"
+                type="number"
+                value={repaymentAmountUsdc}
+              />
+            </label>
+            <div className="grid gap-3 md:grid-cols-2">
+              <Button
+                disabled={!canInitStream}
+                onClick={() => void runAction("initStream")}
+                variant="outline"
+              >
+                Init stream
+              </Button>
+              <Button
+                disabled={!canFundStream}
+                onClick={() => void runAction("fundStream")}
+              >
+                Fund stream
+              </Button>
+              <Button
+                disabled={!canClaimStream}
+                onClick={() => void runAction("claimStream")}
+                variant="outline"
+              >
+                Claim to pool
+              </Button>
+              <Button
+                disabled={!canCloseStream}
+                onClick={() => void runAction("closeStream")}
+                variant="outline"
+              >
+                Close stream
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Borrower initializes and funds the stream. Pool authority claims
+              accrued repayments back into the AXIOM USDC vault.
+            </p>
           </CardContent>
         </Card>
       </section>

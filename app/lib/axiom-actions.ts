@@ -9,7 +9,11 @@ import {
 } from "@solana/web3.js";
 import type { WalletContextState } from "@solana/wallet-adapter-react";
 import { Buffer } from "buffer";
-import { deriveCreditProof, deriveLoan } from "@/lib/borrower-state";
+import {
+  deriveCreditProof,
+  deriveLoan,
+  deriveRepaymentStream,
+} from "@/lib/borrower-state";
 import { AXIOM_DEVNET } from "@/lib/devnet-pool";
 import {
   DEVNET_SILVER_PROOF_BASE64,
@@ -36,6 +40,21 @@ const REGISTER_CREDIT_PROOF_DISCRIMINATOR = Uint8Array.from([
 ]);
 const REQUEST_LOAN_DISCRIMINATOR = Uint8Array.from([
   120, 2, 7, 7, 1, 219, 235, 187,
+]);
+const DISBURSE_LOAN_DISCRIMINATOR = Uint8Array.from([
+  115, 159, 152, 253, 201, 29, 29, 174,
+]);
+const INIT_REPAYMENT_STREAM_DISCRIMINATOR = Uint8Array.from([
+  77, 9, 219, 144, 154, 78, 1, 154,
+]);
+const FUND_REPAYMENT_STREAM_DISCRIMINATOR = Uint8Array.from([
+  111, 174, 212, 231, 145, 102, 72, 165,
+]);
+const CLAIM_REPAYMENTS_DISCRIMINATOR = Uint8Array.from([
+  237, 82, 234, 34, 156, 45, 222, 16,
+]);
+const CLOSE_REPAYMENT_STREAM_DISCRIMINATOR = Uint8Array.from([
+  204, 226, 222, 155, 254, 72, 103, 131,
 ]);
 const DEPOSIT_LENDER_LIQUIDITY_DISCRIMINATOR = Uint8Array.from([
   64, 169, 108, 29, 20, 168, 185, 141,
@@ -83,6 +102,10 @@ function encodeI64(value: bigint) {
   return bytes;
 }
 
+function noArgsData(discriminator: Uint8Array) {
+  return Buffer.from(discriminator);
+}
+
 function pubkey(data: Buffer, offset: number) {
   return new PublicKey(data.subarray(offset, offset + 32));
 }
@@ -93,6 +116,26 @@ function getAssociatedTokenAddress(mint: PublicKey, owner: PublicKey) {
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
   return address;
+}
+
+function createAssociatedTokenAccountInstruction(
+  payer: PublicKey,
+  associatedToken: PublicKey,
+  owner: PublicKey,
+  mint: PublicKey
+) {
+  return new TransactionInstruction({
+    programId: ASSOCIATED_TOKEN_PROGRAM_ID,
+    keys: [
+      { pubkey: payer, isSigner: true, isWritable: true },
+      { pubkey: associatedToken, isSigner: false, isWritable: true },
+      { pubkey: owner, isSigner: false, isWritable: false },
+      { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+    ],
+    data: Buffer.alloc(0),
+  });
 }
 
 function getLenderPosition(lender: PublicKey) {
@@ -126,6 +169,23 @@ async function sendAndConfirm(
     "confirmed"
   );
   return signature;
+}
+
+async function ensureAssociatedTokenAccount(
+  transaction: Transaction,
+  connection: Connection,
+  payer: PublicKey,
+  mint: PublicKey,
+  owner: PublicKey
+) {
+  const ata = getAssociatedTokenAddress(mint, owner);
+  const existing = await connection.getAccountInfo(ata, "confirmed");
+  if (!existing) {
+    transaction.add(
+      createAssociatedTokenAccountInstruction(payer, ata, owner, mint)
+    );
+  }
+  return ata;
 }
 
 export async function depositLiquidityFromWallet({
@@ -348,6 +408,220 @@ export async function requestLoanFromWallet({
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
     data: Buffer.from(data),
+  });
+
+  return sendAndConfirm(connection, wallet, new Transaction().add(ix));
+}
+
+export async function disburseLoanFromWallet({
+  borrower,
+  loan,
+  connection,
+  wallet,
+}: {
+  borrower: PublicKey;
+  loan: PublicKey;
+  connection: Connection;
+  wallet: WalletContextState;
+}) {
+  if (!wallet.publicKey) throw new Error("Connect a wallet first");
+
+  const transaction = new Transaction();
+  const borrowerUsdc = await ensureAssociatedTokenAccount(
+    transaction,
+    connection,
+    wallet.publicKey,
+    AXIOM_DEVNET.usdcMint,
+    borrower
+  );
+
+  transaction.add(
+    new TransactionInstruction({
+      programId: AXIOM_DEVNET.programId,
+      keys: [
+        { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+        { pubkey: borrowerUsdc, isSigner: false, isWritable: true },
+        { pubkey: AXIOM_DEVNET.lendingPool, isSigner: false, isWritable: true },
+        { pubkey: AXIOM_DEVNET.usdcVault, isSigner: false, isWritable: true },
+        { pubkey: loan, isSigner: false, isWritable: true },
+        { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      ],
+      data: noArgsData(DISBURSE_LOAN_DISCRIMINATOR),
+    })
+  );
+
+  return sendAndConfirm(connection, wallet, transaction);
+}
+
+export async function initRepaymentStreamFromWallet({
+  loan,
+  connection,
+  wallet,
+}: {
+  loan: PublicKey;
+  connection: Connection;
+  wallet: WalletContextState;
+}) {
+  if (!wallet.publicKey) throw new Error("Connect a wallet first");
+
+  const repaymentStream = deriveRepaymentStream(loan);
+  const existingStream = await connection.getAccountInfo(
+    repaymentStream,
+    "confirmed"
+  );
+  if (existingStream) {
+    throw new Error("Repayment stream already exists for this loan");
+  }
+
+  const transaction = new Transaction();
+  const streamVault = await ensureAssociatedTokenAccount(
+    transaction,
+    connection,
+    wallet.publicKey,
+    AXIOM_DEVNET.usdcMint,
+    repaymentStream
+  );
+
+  transaction.add(
+    new TransactionInstruction({
+      programId: AXIOM_DEVNET.programId,
+      keys: [
+        { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+        { pubkey: loan, isSigner: false, isWritable: false },
+        { pubkey: streamVault, isSigner: false, isWritable: false },
+        { pubkey: repaymentStream, isSigner: false, isWritable: true },
+        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      ],
+      data: noArgsData(INIT_REPAYMENT_STREAM_DISCRIMINATOR),
+    })
+  );
+
+  return sendAndConfirm(connection, wallet, transaction);
+}
+
+export async function fundRepaymentStreamFromWallet({
+  loan,
+  amountUsdc,
+  connection,
+  wallet,
+}: {
+  loan: PublicKey;
+  amountUsdc: number;
+  connection: Connection;
+  wallet: WalletContextState;
+}) {
+  if (!wallet.publicKey) throw new Error("Connect a wallet first");
+
+  const repaymentStream = deriveRepaymentStream(loan);
+  const streamAccount = await connection.getAccountInfo(
+    repaymentStream,
+    "confirmed"
+  );
+  if (!streamAccount) {
+    throw new Error("Initialize the repayment stream before funding it");
+  }
+
+  const borrowerUsdc = getAssociatedTokenAddress(
+    AXIOM_DEVNET.usdcMint,
+    wallet.publicKey
+  );
+  const borrowerAccount = await connection.getAccountInfo(
+    borrowerUsdc,
+    "confirmed"
+  );
+  if (!borrowerAccount) {
+    throw new Error(
+      `No devnet USDC token account found for this wallet: ${borrowerUsdc.toBase58()}`
+    );
+  }
+
+  const streamVault = getAssociatedTokenAddress(
+    AXIOM_DEVNET.usdcMint,
+    repaymentStream
+  );
+  const ix = new TransactionInstruction({
+    programId: AXIOM_DEVNET.programId,
+    keys: [
+      { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+      { pubkey: borrowerUsdc, isSigner: false, isWritable: true },
+      { pubkey: repaymentStream, isSigner: false, isWritable: true },
+      { pubkey: streamVault, isSigner: false, isWritable: true },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+    ],
+    data: amountData(FUND_REPAYMENT_STREAM_DISCRIMINATOR, amountUsdc),
+  });
+
+  return sendAndConfirm(connection, wallet, new Transaction().add(ix));
+}
+
+export async function claimRepaymentsToPoolFromWallet({
+  loan,
+  connection,
+  wallet,
+}: {
+  loan: PublicKey;
+  connection: Connection;
+  wallet: WalletContextState;
+}) {
+  if (!wallet.publicKey) throw new Error("Connect a wallet first");
+
+  const repaymentStream = deriveRepaymentStream(loan);
+  const streamAccount = await connection.getAccountInfo(
+    repaymentStream,
+    "confirmed"
+  );
+  if (!streamAccount) {
+    throw new Error("Repayment stream has not been initialized");
+  }
+
+  const streamVault = getAssociatedTokenAddress(
+    AXIOM_DEVNET.usdcMint,
+    repaymentStream
+  );
+  const ix = new TransactionInstruction({
+    programId: AXIOM_DEVNET.programId,
+    keys: [
+      { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+      { pubkey: AXIOM_DEVNET.usdcVault, isSigner: false, isWritable: true },
+      { pubkey: loan, isSigner: false, isWritable: true },
+      { pubkey: repaymentStream, isSigner: false, isWritable: true },
+      { pubkey: streamVault, isSigner: false, isWritable: true },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+    ],
+    data: noArgsData(CLAIM_REPAYMENTS_DISCRIMINATOR),
+  });
+
+  return sendAndConfirm(connection, wallet, new Transaction().add(ix));
+}
+
+export async function closeRepaymentStreamFromWallet({
+  loan,
+  connection,
+  wallet,
+}: {
+  loan: PublicKey;
+  connection: Connection;
+  wallet: WalletContextState;
+}) {
+  if (!wallet.publicKey) throw new Error("Connect a wallet first");
+
+  const repaymentStream = deriveRepaymentStream(loan);
+  const streamAccount = await connection.getAccountInfo(
+    repaymentStream,
+    "confirmed"
+  );
+  if (!streamAccount) {
+    throw new Error("Repayment stream has not been initialized");
+  }
+
+  const ix = new TransactionInstruction({
+    programId: AXIOM_DEVNET.programId,
+    keys: [
+      { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+      { pubkey: loan, isSigner: false, isWritable: true },
+      { pubkey: repaymentStream, isSigner: false, isWritable: true },
+    ],
+    data: noArgsData(CLOSE_REPAYMENT_STREAM_DISCRIMINATOR),
   });
 
   return sendAndConfirm(connection, wallet, new Transaction().add(ix));

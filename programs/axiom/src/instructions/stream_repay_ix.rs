@@ -77,6 +77,10 @@ pub struct CloseStream<'info> {
 
 pub fn handle_init_repayment_stream(ctx: Context<InitRepayStream>) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
+    require!(
+        ctx.accounts.loan.stream_rate == 1,
+        AxiomError::LoanNotDisbursed
+    );
     ctx.accounts.repayment_stream.initialize(
         RepaymentStreamArgs {
             loan_key: ctx.accounts.loan.key(),

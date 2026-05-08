@@ -287,6 +287,10 @@ pub fn handle_disburse_loan(ctx: Context<DisburseLoan>) -> Result<()> {
         ctx.accounts.loan.status == LoanStatus::Active,
         AxiomError::InvalidLoanStatus
     );
+    require!(
+        ctx.accounts.loan.stream_rate == 0,
+        AxiomError::LoanAlreadyDisbursed
+    );
 
     let amount = ctx.accounts.loan.principal;
     require!(amount > 0, AxiomError::InvalidAmount);
@@ -296,6 +300,7 @@ pub fn handle_disburse_loan(ctx: Context<DisburseLoan>) -> Result<()> {
     );
 
     ctx.accounts.lending_pool.borrow(amount)?;
+    ctx.accounts.loan.stream_rate = 1;
 
     let vault_key = ctx.accounts.usdt_vault.key();
     let signer_seeds: &[&[&[u8]]] = &[&[
