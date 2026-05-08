@@ -31,6 +31,7 @@ export const AXIOM_DEVNET = {
 };
 
 export type LivePoolState = {
+  authority: string;
   totalDepositsUsdc: number;
   totalBorrowedUsdc: number;
   utilizationBps: number;
@@ -58,6 +59,10 @@ function readI64(data: Uint8Array, offset: number) {
     0,
     true
   );
+}
+
+function readPubkey(data: Uint8Array, offset: number) {
+  return new PublicKey(data.slice(offset, offset + 32));
 }
 
 function usdc(units: bigint) {
@@ -101,6 +106,7 @@ export async function fetchLivePoolState(): Promise<LivePoolState> {
   const lastRebalance = readI64(data, 144);
 
   return {
+    authority: readPubkey(data, 8).toBase58(),
     totalDepositsUsdc: usdc(totalDeposits),
     totalBorrowedUsdc: usdc(totalBorrowed),
     utilizationBps,

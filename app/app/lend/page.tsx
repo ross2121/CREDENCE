@@ -11,14 +11,18 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
 import { StatusState } from "@/components/status-state";
 import { useLivePool } from "@/hooks/use-live-pool";
-import { demoApi } from "@/lib/demo-api";
+import {
+  depositLiquidityFromWallet,
+  rebalanceToKaminoFromWallet,
+} from "@/lib/axiom-actions";
 import { useAxiomStore } from "@/store/use-axiom-store";
 
 const apyRows = [
@@ -28,6 +32,12 @@ const apyRows = [
 ];
 
 export default function LendPage() {
+  const wallet = useWallet();
+  const { connection } = useConnection();
+  const [actionState, setActionState] = useState<{
+    status: "idle" | "loading" | "success" | "error";
+    message: string;
+  }>({ status: "idle", message: "Connect a wallet to deposit or rebalance." });
   const {
     pool,
     lenderPosition,
@@ -70,6 +80,45 @@ export default function LendPage() {
     : livePool.error
     ? "error"
     : "success";
+  const isPoolAuthority =
+    !!live?.authority && wallet.publicKey?.toBase58() === live.authority;
+
+  async function runAction(action: "deposit" | "rebalance") {
+    setActionState({
+      status: "loading",
+      message:
+        action === "deposit"
+          ? "Waiting for wallet approval to deposit USDC."
+          : "Waiting for pool-authority approval to rebalance to Kamino.",
+    });
+
+    try {
+      const signature =
+        action === "deposit"
+          ? await depositLiquidityFromWallet({
+              amountUsdc: lenderAction.amountUsdt,
+              connection,
+              wallet,
+            })
+          : await rebalanceToKaminoFromWallet({
+              amountUsdc: lenderAction.amountUsdt,
+              connection,
+              wallet,
+            });
+
+      await livePool.refresh();
+      setActionState({
+        status: "success",
+        message: `Confirmed ${signature.slice(0, 8)}...${signature.slice(-8)}`,
+      });
+    } catch (caught) {
+      setActionState({
+        status: "error",
+        message:
+          caught instanceof Error ? caught.message : "Transaction failed",
+      });
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -130,9 +179,9 @@ export default function LendPage() {
           title="Devnet pool"
         />
         <StatusState
-          message={demoApi.borrower.message}
-          state={demoApi.borrower.state}
-          title="Privy policy"
+          message={actionState.message}
+          state={actionState.status === "idle" ? "empty" : actionState.status}
+          title="Wallet action"
         />
       </section>
 
@@ -155,11 +204,14 @@ export default function LendPage() {
               />
             </label>
             <div className="grid grid-cols-2 gap-3">
-              <Button>
+              <Button
+                disabled={actionState.status === "loading" || !wallet.connected}
+                onClick={() => void runAction("deposit")}
+              >
                 <ArrowDownToLine className="h-4 w-4" aria-hidden="true" />
                 Deposit
               </Button>
-              <Button variant="outline">
+              <Button disabled variant="outline">
                 <ArrowUpFromLine className="h-4 w-4" aria-hidden="true" />
                 Withdraw
               </Button>
@@ -169,6 +221,8 @@ export default function LendPage() {
               <p className="text-sm text-muted-foreground">
                 Privy policy and AXIOM on-chain checks permit deposits to the
                 AXIOM vault and rebalances to the configured Kamino vault only.
+                Withdraw is disabled because the current program exposes
+                authority withdrawal, not per-lender share accounting.
               </p>
             </div>
           </CardContent>
@@ -209,6 +263,7 @@ export default function LendPage() {
             {live ? (
               <div className="grid gap-2 rounded-md border border-border p-3 text-xs text-muted-foreground">
                 <AddressRow label="Pool" value={live.lendingPool} />
+                <AddressRow label="Authority" value={live.authority} />
                 <AddressRow label="USDC vault" value={live.usdcVault} />
                 <AddressRow
                   label="Kamino shares"
@@ -216,6 +271,25 @@ export default function LendPage() {
                 />
                 <AddressRow label="Kamino vault" value={live.kaminoVault} />
               </div>
+            ) : null}
+            <Button
+              className="w-full"
+              disabled={
+                actionState.status === "loading" ||
+                !wallet.connected ||
+                !isPoolAuthority
+              }
+              onClick={() => void runAction("rebalance")}
+              variant="secondary"
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+              Rebalance to Kamino
+            </Button>
+            {!isPoolAuthority && wallet.connected ? (
+              <p className="text-xs text-muted-foreground">
+                Rebalance requires the connected wallet to match the pool
+                authority.
+              </p>
             ) : null}
           </CardContent>
         </Card>
