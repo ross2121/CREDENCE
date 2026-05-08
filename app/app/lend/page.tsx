@@ -22,6 +22,7 @@ import { useLivePool } from "@/hooks/use-live-pool";
 import {
   depositLiquidityFromWallet,
   rebalanceToKaminoFromWallet,
+  withdrawLiquidityToWallet,
 } from "@/lib/axiom-actions";
 import { useAxiomStore } from "@/store/use-axiom-store";
 
@@ -83,19 +84,27 @@ export default function LendPage() {
   const isPoolAuthority =
     !!live?.authority && wallet.publicKey?.toBase58() === live.authority;
 
-  async function runAction(action: "deposit" | "rebalance") {
+  async function runAction(action: "deposit" | "withdraw" | "rebalance") {
     setActionState({
       status: "loading",
-      message:
-        action === "deposit"
-          ? "Waiting for wallet approval to deposit USDC."
-          : "Waiting for pool-authority approval to rebalance to Kamino.",
+      message: {
+        deposit: "Waiting for wallet approval to deposit USDC.",
+        withdraw: "Waiting for wallet approval to withdraw USDC.",
+        rebalance:
+          "Waiting for pool-authority approval to rebalance to Kamino.",
+      }[action],
     });
 
     try {
       const signature =
         action === "deposit"
           ? await depositLiquidityFromWallet({
+              amountUsdc: lenderAction.amountUsdt,
+              connection,
+              wallet,
+            })
+          : action === "withdraw"
+          ? await withdrawLiquidityToWallet({
               amountUsdc: lenderAction.amountUsdt,
               connection,
               wallet,
@@ -211,7 +220,11 @@ export default function LendPage() {
                 <ArrowDownToLine className="h-4 w-4" aria-hidden="true" />
                 Deposit
               </Button>
-              <Button disabled variant="outline">
+              <Button
+                disabled={actionState.status === "loading" || !wallet.connected}
+                onClick={() => void runAction("withdraw")}
+                variant="outline"
+              >
                 <ArrowUpFromLine className="h-4 w-4" aria-hidden="true" />
                 Withdraw
               </Button>
@@ -221,8 +234,8 @@ export default function LendPage() {
               <p className="text-sm text-muted-foreground">
                 Privy policy and AXIOM on-chain checks permit deposits to the
                 AXIOM vault and rebalances to the configured Kamino vault only.
-                Withdraw is disabled because the current program exposes
-                authority withdrawal, not per-lender share accounting.
+                Lender withdrawals are limited by the connected wallet&apos;s
+                AXIOM position and by liquid USDC currently in the pool vault.
               </p>
             </div>
           </CardContent>

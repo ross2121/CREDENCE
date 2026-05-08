@@ -3,6 +3,7 @@
 import {
   Connection,
   PublicKey,
+  SystemProgram,
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
@@ -22,8 +23,14 @@ const TOKEN_PROGRAM_ID = new PublicKey(
 const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
   "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
 );
-const DEPOSIT_LIQUIDITY_DISCRIMINATOR = Uint8Array.from([
-  245, 99, 59, 25, 151, 71, 233, 249,
+const INITIALIZE_LENDER_POSITION_DISCRIMINATOR = Uint8Array.from([
+  118, 106, 247, 249, 249, 35, 148, 205,
+]);
+const DEPOSIT_LENDER_LIQUIDITY_DISCRIMINATOR = Uint8Array.from([
+  64, 169, 108, 29, 20, 168, 185, 141,
+]);
+const WITHDRAW_LENDER_LIQUIDITY_DISCRIMINATOR = Uint8Array.from([
+  145, 233, 1, 189, 248, 140, 148, 83,
 ]);
 const REBALANCE_TO_KAMINO_DISCRIMINATOR = Uint8Array.from([
   243, 181, 203, 232, 220, 82, 49, 200,
@@ -55,6 +62,18 @@ function getAssociatedTokenAddress(mint: PublicKey, owner: PublicKey) {
   const [address] = PublicKey.findProgramAddressSync(
     [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
     ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+  return address;
+}
+
+function getLenderPosition(lender: PublicKey) {
+  const [address] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("lender_position"),
+      AXIOM_DEVNET.lendingPool.toBuffer(),
+      lender.toBuffer(),
+    ],
+    AXIOM_DEVNET.programId
   );
   return address;
 }
@@ -95,6 +114,7 @@ export async function depositLiquidityFromWallet({
     AXIOM_DEVNET.usdcMint,
     wallet.publicKey
   );
+  const lenderPosition = getLenderPosition(wallet.publicKey);
   const sourceAccount = await connection.getAccountInfo(
     lenderUsdc,
     "confirmed"
@@ -105,16 +125,93 @@ export async function depositLiquidityFromWallet({
     );
   }
 
+  const transaction = new Transaction();
+  const positionAccount = await connection.getAccountInfo(
+    lenderPosition,
+    "confirmed"
+  );
+  if (!positionAccount) {
+    transaction.add(
+      new TransactionInstruction({
+        programId: AXIOM_DEVNET.programId,
+        keys: [
+          { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+          {
+            pubkey: AXIOM_DEVNET.lendingPool,
+            isSigner: false,
+            isWritable: false,
+          },
+          { pubkey: lenderPosition, isSigner: false, isWritable: true },
+          {
+            pubkey: SystemProgram.programId,
+            isSigner: false,
+            isWritable: false,
+          },
+        ],
+        data: Buffer.from(INITIALIZE_LENDER_POSITION_DISCRIMINATOR),
+      })
+    );
+  }
+
+  transaction.add(
+    new TransactionInstruction({
+      programId: AXIOM_DEVNET.programId,
+      keys: [
+        { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+        { pubkey: lenderUsdc, isSigner: false, isWritable: true },
+        { pubkey: AXIOM_DEVNET.lendingPool, isSigner: false, isWritable: true },
+        { pubkey: AXIOM_DEVNET.usdcVault, isSigner: false, isWritable: true },
+        { pubkey: lenderPosition, isSigner: false, isWritable: true },
+        { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      ],
+      data: amountData(DEPOSIT_LENDER_LIQUIDITY_DISCRIMINATOR, amountUsdc),
+    })
+  );
+
+  return sendAndConfirm(connection, wallet, transaction);
+}
+
+export async function withdrawLiquidityToWallet({
+  amountUsdc,
+  connection,
+  wallet,
+}: {
+  amountUsdc: number;
+  connection: Connection;
+  wallet: WalletContextState;
+}) {
+  if (!wallet.publicKey) throw new Error("Connect a wallet first");
+
+  const destinationUsdc = getAssociatedTokenAddress(
+    AXIOM_DEVNET.usdcMint,
+    wallet.publicKey
+  );
+  const lenderPosition = getLenderPosition(wallet.publicKey);
+  const [destinationAccount, positionAccount] = await Promise.all([
+    connection.getAccountInfo(destinationUsdc, "confirmed"),
+    connection.getAccountInfo(lenderPosition, "confirmed"),
+  ]);
+
+  if (!destinationAccount) {
+    throw new Error(
+      `No devnet USDC token account found for this wallet: ${destinationUsdc.toBase58()}`
+    );
+  }
+  if (!positionAccount) {
+    throw new Error("No AXIOM lender position exists for this wallet yet");
+  }
+
   const ix = new TransactionInstruction({
     programId: AXIOM_DEVNET.programId,
     keys: [
       { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
-      { pubkey: lenderUsdc, isSigner: false, isWritable: true },
+      { pubkey: destinationUsdc, isSigner: false, isWritable: true },
       { pubkey: AXIOM_DEVNET.lendingPool, isSigner: false, isWritable: true },
       { pubkey: AXIOM_DEVNET.usdcVault, isSigner: false, isWritable: true },
+      { pubkey: lenderPosition, isSigner: false, isWritable: true },
       { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
     ],
-    data: amountData(DEPOSIT_LIQUIDITY_DISCRIMINATOR, amountUsdc),
+    data: amountData(WITHDRAW_LENDER_LIQUIDITY_DISCRIMINATOR, amountUsdc),
   });
 
   return sendAndConfirm(connection, wallet, new Transaction().add(ix));

@@ -72,6 +72,8 @@ pub enum AxiomError {
     ReputationTooLow,
     #[msg("Invalid loan account")]
     InvalidLoanAccount,
+    #[msg("Lender position does not have enough withdrawable principal")]
+    InsufficientLenderPosition,
     #[msg("Production verifier is not wired; rebuild with a real verifier integration")]
     ProductionVerifierUnavailable,
     #[msg("Production CPI integration is not wired; rebuild with the real protocol CPI")]

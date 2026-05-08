@@ -41,8 +41,26 @@ pub mod axiom {
         instructions::lending_pool_ix::handle_deposit_liquidity(ctx, amount)
     }
 
+    pub fn initialize_lender_position(ctx: Context<InitializeLenderPosition>) -> Result<()> {
+        instructions::lending_pool_ix::handle_initialize_lender_position(ctx)
+    }
+
+    pub fn deposit_lender_liquidity(
+        ctx: Context<DepositLenderLiquidity>,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::lending_pool_ix::handle_deposit_lender_liquidity(ctx, amount)
+    }
+
     pub fn withdraw_liquidity(ctx: Context<WithdrawLiquidity>, amount: u64) -> Result<()> {
         instructions::lending_pool_ix::handle_withdraw_liquidity(ctx, amount)
+    }
+
+    pub fn withdraw_lender_liquidity(
+        ctx: Context<WithdrawLenderLiquidity>,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::lending_pool_ix::handle_withdraw_lender_liquidity(ctx, amount)
     }
 
     pub fn disburse_loan(ctx: Context<DisburseLoan>) -> Result<()> {

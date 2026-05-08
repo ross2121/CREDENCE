@@ -17,6 +17,14 @@ pub struct LiquidityWithdrawn {
 }
 
 #[event]
+pub struct LenderPositionUpdated {
+    pub pool: Pubkey,
+    pub lender: Pubkey,
+    pub deposited_amount: u64,
+    pub withdrawn_amount: u64,
+}
+
+#[event]
 pub struct LoanDisbursed {
     pub loan: Pubkey,
     pub borrower: Pubkey,
