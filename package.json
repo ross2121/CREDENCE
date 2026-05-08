@@ -12,6 +12,7 @@
     "devnet:zk-proof": "npx ts-node scripts/devnet-register-zk-proof.ts",
     "devnet:init-pool": "npx ts-node scripts/init-devnet-pool.ts",
     "devnet:fund-pool": "npx ts-node scripts/fund-devnet-pool.ts",
+    "devnet:rebalance-kamino": "npx ts-node scripts/rebalance-kamino-devnet.ts",
     "seed:pool": "npx ts-node scripts/seed-pool.ts",
     "demo:e2e": "npx ts-node scripts/demo-e2e.ts",
     "test": "anchor test",
