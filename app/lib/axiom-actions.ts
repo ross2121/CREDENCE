@@ -9,7 +9,12 @@ import {
 } from "@solana/web3.js";
 import type { WalletContextState } from "@solana/wallet-adapter-react";
 import { Buffer } from "buffer";
+import { deriveCreditProof, deriveLoan } from "@/lib/borrower-state";
 import { AXIOM_DEVNET } from "@/lib/devnet-pool";
+import {
+  DEVNET_SILVER_PROOF_BASE64,
+  DEVNET_SILVER_PUBLIC_INPUTS,
+} from "@/lib/zk-fixture";
 
 const KVAULT_PROGRAM_ID = new PublicKey(
   "devkRngFnfp4gBc5a3LsadgbQKdPo8MSZ4prFiNSVmY"
@@ -25,6 +30,12 @@ const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
 );
 const INITIALIZE_LENDER_POSITION_DISCRIMINATOR = Uint8Array.from([
   118, 106, 247, 249, 249, 35, 148, 205,
+]);
+const REGISTER_CREDIT_PROOF_DISCRIMINATOR = Uint8Array.from([
+  132, 34, 139, 212, 102, 194, 233, 244,
+]);
+const REQUEST_LOAN_DISCRIMINATOR = Uint8Array.from([
+  120, 2, 7, 7, 1, 219, 235, 187,
 ]);
 const DEPOSIT_LENDER_LIQUIDITY_DISCRIMINATOR = Uint8Array.from([
   64, 169, 108, 29, 20, 168, 185, 141,
@@ -52,6 +63,24 @@ function amountData(discriminator: Uint8Array, amountUsdc: number) {
     true
   );
   return Buffer.from(data);
+}
+
+function encodeU32(value: number) {
+  const bytes = new Uint8Array(4);
+  new DataView(bytes.buffer).setUint32(0, value, true);
+  return bytes;
+}
+
+function encodeU64(value: bigint) {
+  const bytes = new Uint8Array(8);
+  new DataView(bytes.buffer).setBigUint64(0, value, true);
+  return bytes;
+}
+
+function encodeI64(value: bigint) {
+  const bytes = new Uint8Array(8);
+  new DataView(bytes.buffer).setBigInt64(0, value, true);
+  return bytes;
 }
 
 function pubkey(data: Buffer, offset: number) {
@@ -212,6 +241,113 @@ export async function withdrawLiquidityToWallet({
       { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
     ],
     data: amountData(WITHDRAW_LENDER_LIQUIDITY_DISCRIMINATOR, amountUsdc),
+  });
+
+  return sendAndConfirm(connection, wallet, new Transaction().add(ix));
+}
+
+export async function registerFixtureCreditProof({
+  connection,
+  wallet,
+}: {
+  connection: Connection;
+  wallet: WalletContextState;
+}) {
+  if (!wallet.publicKey) throw new Error("Connect a wallet first");
+
+  const creditProof = deriveCreditProof(wallet.publicKey);
+  const existing = await connection.getAccountInfo(creditProof, "confirmed");
+  if (existing) {
+    throw new Error("Credit proof already exists for this wallet");
+  }
+
+  const proofBytes = Uint8Array.from(
+    Buffer.from(DEVNET_SILVER_PROOF_BASE64, "base64")
+  );
+  const publicInputs = DEVNET_SILVER_PUBLIC_INPUTS.map((input) =>
+    Uint8Array.from(input)
+  );
+  const expiry = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60);
+
+  const data = new Uint8Array(
+    8 + 1 + 8 + 4 + proofBytes.length + 4 + publicInputs.length * 32 + 8
+  );
+  let offset = 0;
+  data.set(REGISTER_CREDIT_PROOF_DISCRIMINATOR, offset);
+  offset += 8;
+  data[offset] = 1;
+  offset += 1;
+  data.set(encodeU64(BigInt(2_000_000_000)), offset);
+  offset += 8;
+  data.set(encodeU32(proofBytes.length), offset);
+  offset += 4;
+  data.set(proofBytes, offset);
+  offset += proofBytes.length;
+  data.set(encodeU32(publicInputs.length), offset);
+  offset += 4;
+  publicInputs.forEach((input) => {
+    data.set(input, offset);
+    offset += 32;
+  });
+  data.set(encodeI64(expiry), offset);
+
+  const ix = new TransactionInstruction({
+    programId: AXIOM_DEVNET.programId,
+    keys: [
+      { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+      { pubkey: creditProof, isSigner: false, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data: Buffer.from(data),
+  });
+
+  return sendAndConfirm(connection, wallet, new Transaction().add(ix));
+}
+
+export async function requestLoanFromWallet({
+  amountUsdc,
+  durationDays,
+  collateralUsdc,
+  connection,
+  wallet,
+}: {
+  amountUsdc: number;
+  durationDays: number;
+  collateralUsdc: number;
+  connection: Connection;
+  wallet: WalletContextState;
+}) {
+  if (!wallet.publicKey) throw new Error("Connect a wallet first");
+
+  const creditProof = deriveCreditProof(wallet.publicKey);
+  const proofAccount = await connection.getAccountInfo(creditProof, "confirmed");
+  if (!proofAccount) {
+    throw new Error("Register a credit proof before requesting a loan");
+  }
+
+  const loan = deriveLoan(wallet.publicKey, creditProof);
+  const data = new Uint8Array(8 + 8 + 8 + 8 + 32);
+  let offset = 0;
+  data.set(REQUEST_LOAN_DISCRIMINATOR, offset);
+  offset += 8;
+  data.set(encodeU64(BigInt(Math.floor(amountUsdc * 1_000_000))), offset);
+  offset += 8;
+  data.set(encodeU64(BigInt(durationDays)), offset);
+  offset += 8;
+  data.set(encodeU64(BigInt(Math.floor(collateralUsdc * 1_000_000))), offset);
+  offset += 8;
+  data.set(wallet.publicKey.toBytes(), offset);
+
+  const ix = new TransactionInstruction({
+    programId: AXIOM_DEVNET.programId,
+    keys: [
+      { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+      { pubkey: creditProof, isSigner: false, isWritable: false },
+      { pubkey: AXIOM_DEVNET.usdcMint, isSigner: false, isWritable: false },
+      { pubkey: loan, isSigner: false, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data: Buffer.from(data),
   });
 
   return sendAndConfirm(connection, wallet, new Transaction().add(ix));

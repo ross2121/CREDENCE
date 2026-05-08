@@ -15,6 +15,7 @@
     "devnet:admin-withdraw": "npx ts-node scripts/withdraw-devnet-pool.ts",
     "devnet:lender-deposit": "npx ts-node scripts/deposit-lender-devnet.ts",
     "devnet:lender-withdraw": "npx ts-node scripts/withdraw-lender-devnet.ts",
+    "devnet:request-loan": "npx ts-node scripts/request-loan-devnet.ts",
     "devnet:rebalance-kamino": "npx ts-node scripts/rebalance-kamino-devnet.ts",
     "seed:pool": "npx ts-node scripts/seed-pool.ts",
     "demo:e2e": "npx ts-node scripts/demo-e2e.ts",

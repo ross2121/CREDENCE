@@ -11,14 +11,19 @@ import {
   SlidersHorizontal,
   Wallet,
 } from "lucide-react";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
 import { StatusState } from "@/components/status-state";
-import { demoApi } from "@/lib/demo-api";
+import { useBorrowerState } from "@/hooks/use-borrower-state";
+import {
+  registerFixtureCreditProof,
+  requestLoanFromWallet,
+} from "@/lib/axiom-actions";
 import { useAxiomStore } from "@/store/use-axiom-store";
 
 const scoringSteps = [
@@ -27,8 +32,25 @@ const scoringSteps = [
   ["ZK proof", "Tier threshold proof is ready for registration."],
 ];
 
+const tierConfig = {
+  Bronze: { collateralBps: 8_000, interestBps: 1_800, maxLoanUsdt: 500 },
+  Silver: { collateralBps: 5_000, interestBps: 1_200, maxLoanUsdt: 2_000 },
+  Gold: { collateralBps: 2_500, interestBps: 800, maxLoanUsdt: 10_000 },
+  Platinum: { collateralBps: 1_000, interestBps: 500, maxLoanUsdt: 50_000 },
+} as const;
+
 export default function BorrowPage() {
-  const { connected, publicKey } = useWallet();
+  const wallet = useWallet();
+  const { connection } = useConnection();
+  const { connected, publicKey } = wallet;
+  const [actionState, setActionState] = useState<{
+    status: "idle" | "loading" | "success" | "error";
+    message: string;
+  }>({
+    status: "idle",
+    message: "Connect a wallet to register a proof or request a loan.",
+  });
+  const borrowerState = useBorrowerState(publicKey);
   const {
     credit,
     loanRequest,
@@ -42,9 +64,88 @@ export default function BorrowPage() {
     repaymentStream: state.repaymentStream,
     updateLoanRequest: state.updateLoanRequest,
   }));
-  const repaymentProgress = Math.round(
-    (activeLoan.repaidUsdt / activeLoan.principalUsdt) * 100
+  const liveProof = borrowerState.data?.creditProof;
+  const liveLoan = borrowerState.data?.loan;
+  const effectiveTier =
+    (liveProof?.tier ?? credit.tier) as keyof typeof tierConfig;
+  const effectiveTierConfig = tierConfig[effectiveTier];
+  const derivedCollateralUsdt = Math.ceil(
+    (loanRequest.principalUsdt * effectiveTierConfig.collateralBps) / 10_000
   );
+  const displayedCredit = {
+    tier: liveProof?.tier ?? credit.tier,
+    maxLoanUsdt: liveProof?.maxLoanUsdc ?? effectiveTierConfig.maxLoanUsdt,
+    collateralRequiredBps: effectiveTierConfig.collateralBps,
+    proofStatus: liveProof ? "registered" : credit.proofStatus,
+    score: credit.score,
+    modelHash: credit.modelHash,
+    walletHash: credit.walletHash,
+    expiresAt: liveProof?.expiresAt ?? credit.expiresAt,
+  };
+  const displayedLoan = {
+    principalUsdt: liveLoan?.principalUsdc ?? activeLoan.principalUsdt,
+    repaidUsdt: liveLoan?.repaidUsdc ?? activeLoan.repaidUsdt,
+    apyBps: liveLoan?.interestBps ?? effectiveTierConfig.interestBps,
+    dueDate: liveLoan?.dueDate ?? activeLoan.dueDate,
+    status: liveLoan?.status ?? activeLoan.status,
+  };
+  const proofWarning =
+    liveProof && liveProof.maxLoanUsdc < 1
+      ? "This wallet has an older devnet proof with a near-zero loan cap. Use a fresh wallet and register a new proof."
+      : null;
+  const requestedAmountExceedsTierLimit =
+    loanRequest.principalUsdt > displayedCredit.maxLoanUsdt;
+  const requestLoanDisabled =
+    actionState.status === "loading" ||
+    !connected ||
+    !liveProof ||
+    Boolean(liveLoan) ||
+    requestedAmountExceedsTierLimit;
+  const repaymentProgress =
+    displayedLoan.principalUsdt > 0
+      ? Math.round(
+          (displayedLoan.repaidUsdt / displayedLoan.principalUsdt) * 100
+        )
+      : 0;
+  const borrowerStatus = borrowerState.loading
+    ? "loading"
+    : borrowerState.error
+    ? "error"
+    : "success";
+
+  async function runAction(action: "proof" | "loan") {
+    setActionState({
+      status: "loading",
+      message:
+        action === "proof"
+          ? "Waiting for wallet approval to register the devnet credit proof."
+          : "Waiting for wallet approval to create the loan request.",
+    });
+
+    try {
+      const signature =
+        action === "proof"
+          ? await registerFixtureCreditProof({ connection, wallet })
+          : await requestLoanFromWallet({
+              amountUsdc: loanRequest.principalUsdt,
+              durationDays: loanRequest.durationDays,
+              collateralUsdc: derivedCollateralUsdt,
+              connection,
+              wallet,
+            });
+      await borrowerState.refresh();
+      setActionState({
+        status: "success",
+        message: `Confirmed ${signature.slice(0, 8)}...${signature.slice(-8)}`,
+      });
+    } catch (caught) {
+      setActionState({
+        status: "error",
+        message:
+          caught instanceof Error ? caught.message : "Borrower transaction failed",
+      });
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -63,17 +164,17 @@ export default function BorrowPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <Metric
               label="Credit tier"
-              value={credit.tier}
-              detail={`${credit.score} local score`}
+              value={displayedCredit.tier}
+              detail={`${displayedCredit.score} local score`}
             />
             <Metric
               label="Max loan"
-              value={`$${credit.maxLoanUsdt.toLocaleString()}`}
-              detail="USDT principal limit"
+              value={`$${displayedCredit.maxLoanUsdt.toLocaleString()}`}
+              detail="USDC principal limit"
             />
             <Metric
               label="Collateral"
-              value={`${credit.collateralRequiredBps / 100}%`}
+              value={`${displayedCredit.collateralRequiredBps / 100}%`}
               detail="Required for this tier"
             />
           </div>
@@ -111,14 +212,17 @@ export default function BorrowPage() {
       </section>
       <section className="grid gap-4 md:grid-cols-2">
         <StatusState
-          message={demoApi.borrower.message}
-          state={demoApi.borrower.state}
-          title="Borrower fixture"
+          message={
+            borrowerState.error ??
+            "Borrower proof and loan PDAs are loaded from AXIOM devnet."
+          }
+          state={borrowerStatus}
+          title="Borrower state"
         />
         <StatusState
-          message={demoApi.liquidation.message}
-          state={demoApi.liquidation.state}
-          title="Liquidation monitor"
+          message={actionState.message}
+          state={actionState.status === "idle" ? "empty" : actionState.status}
+          title="Wallet action"
         />
       </section>
 
@@ -145,10 +249,28 @@ export default function BorrowPage() {
             <CardTitle>Tier proof</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <InfoRow label="Model" value={credit.modelHash} />
-            <InfoRow label="Wallet hash" value={credit.walletHash} />
-            <InfoRow label="Proof status" value={credit.proofStatus} />
-            <InfoRow label="Expires" value={credit.expiresAt} />
+            <InfoRow label="Model" value={displayedCredit.modelHash} />
+            <InfoRow label="Wallet hash" value={displayedCredit.walletHash} />
+            <InfoRow label="Proof status" value={displayedCredit.proofStatus} />
+            <InfoRow label="Expires" value={displayedCredit.expiresAt} />
+            {liveProof ? (
+              <InfoRow label="Proof PDA" value={liveProof.address} />
+            ) : null}
+            {proofWarning ? (
+              <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
+                {proofWarning}
+              </p>
+            ) : null}
+            <Button
+              className="w-full"
+              disabled={
+                actionState.status === "loading" || !connected || Boolean(liveProof)
+              }
+              onClick={() => void runAction("proof")}
+              variant="outline"
+            >
+              Register devnet proof
+            </Button>
           </CardContent>
         </Card>
 
@@ -161,8 +283,8 @@ export default function BorrowPage() {
               <span className="text-sm font-medium">Principal</span>
               <input
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                max={credit.maxLoanUsdt}
-                min={500}
+                max={displayedCredit.maxLoanUsdt}
+                min={1}
                 onChange={(event) =>
                   updateLoanRequest({
                     principalUsdt: Number(event.target.value),
@@ -196,12 +318,21 @@ export default function BorrowPage() {
               <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                 <InfoRow
                   label="Collateral"
-                  value={`$${loanRequest.collateralUsdt.toLocaleString()}`}
+                  value={`$${derivedCollateralUsdt.toLocaleString()}`}
                 />
-                <InfoRow label="APY" value={`${activeLoan.apyBps / 100}%`} />
+                <InfoRow label="APY" value={`${displayedLoan.apyBps / 100}%`} />
               </div>
             </div>
-            <Button className="w-full">
+            {requestedAmountExceedsTierLimit ? (
+              <p className="text-sm text-destructive">
+                Requested amount is above this wallet&apos;s registered tier limit.
+              </p>
+            ) : null}
+            <Button
+              className="w-full"
+              disabled={requestLoanDisabled}
+              onClick={() => void runAction("loan")}
+            >
               Request loan
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Button>
@@ -219,12 +350,12 @@ export default function BorrowPage() {
               <InfoPanel
                 icon={<CircleDollarSign className="h-5 w-5" />}
                 label="Principal"
-                value={`$${activeLoan.principalUsdt.toLocaleString()}`}
+                value={`$${displayedLoan.principalUsdt.toLocaleString()}`}
               />
               <InfoPanel
                 icon={<Clock3 className="h-5 w-5" />}
                 label="Due"
-                value={activeLoan.dueDate}
+                value={displayedLoan.dueDate}
               />
             </div>
             <div>
@@ -239,7 +370,7 @@ export default function BorrowPage() {
                 />
               </div>
             </div>
-            <Badge>{activeLoan.status}</Badge>
+            <Badge>{displayedLoan.status}</Badge>
           </CardContent>
         </Card>
 

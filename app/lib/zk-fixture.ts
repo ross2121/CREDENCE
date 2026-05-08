@@ -1,0 +1,17 @@
+export const DEVNET_SILVER_PROOF_BASE64 =
+  "J5m3+MDtTMAOV++QSV/urDGRS75/2UxRiS2PXpslcZwb+5yLzX7W9fcyUuYdO/vyRK0oaSX9XZjbhYS/vlckDwEZsNsjrtpUGD8WTu6CYt2QkfE2MEI4b9Km+t/JlWRlBN5GlhXKXc2lPc7VqRBqgjAUoKZqrLNV4C9U5qywIVoBBuZZ/9fM1MNhShAvQBHIpJKNiC720CUB8kvKMxXmHgaZtzLZ1NMgyzcA1Yu17zKdEr7Z3f5BbU8cf7qyxzo7JR9VEqM5Xo5wRu6tJHjIQV7e1rrVuPt9vOHxSKoluGwvWcX/TzermEYogNIzwl+565R3Y9MFjKw8EKQM4BPT2A==";
+
+export const DEVNET_SILVER_PUBLIC_INPUTS = [
+  [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 2, 88,
+  ],
+  [
+    1, 42, 221, 160, 51, 197, 19, 238, 4, 153, 82, 85, 128, 32, 27, 119, 62, 6,
+    123, 127, 208, 209, 205, 170, 236, 119, 19, 76, 201, 127, 18, 204,
+  ],
+  [
+    37, 26, 33, 17, 3, 148, 9, 63, 119, 183, 225, 110, 137, 211, 172, 201, 203,
+    19, 204, 231, 85, 221, 159, 94, 59, 170, 87, 203, 236, 2, 9, 225,
+  ],
+] as const;
