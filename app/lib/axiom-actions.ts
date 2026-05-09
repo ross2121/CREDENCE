@@ -13,8 +13,10 @@ import {
   deriveCollateralEscrow,
   deriveCollateralVault,
   deriveCreditProof,
+  deriveLiquidationState,
   deriveLoan,
   deriveRepaymentStream,
+  deriveReputation,
 } from "@/lib/borrower-state";
 import { AXIOM_DEVNET } from "@/lib/devnet-pool";
 import { deriveIkaPolicy } from "@/lib/policy-state";
@@ -44,6 +46,9 @@ const REGISTER_CREDIT_PROOF_DISCRIMINATOR = Uint8Array.from([
 const REQUEST_LOAN_DISCRIMINATOR = Uint8Array.from([
   120, 2, 7, 7, 1, 219, 235, 187,
 ]);
+const MINT_REPUTATION_NFT_DISCRIMINATOR = Uint8Array.from([
+  240, 117, 21, 198, 77, 214, 150, 128,
+]);
 const INITIALIZE_IKA_POLICY_DISCRIMINATOR = Uint8Array.from([
   210, 26, 40, 85, 131, 201, 170, 12,
 ]);
@@ -64,6 +69,12 @@ const CLAIM_REPAYMENTS_DISCRIMINATOR = Uint8Array.from([
 ]);
 const CLOSE_REPAYMENT_STREAM_DISCRIMINATOR = Uint8Array.from([
   204, 226, 222, 155, 254, 72, 103, 131,
+]);
+const ISSUE_LIQUIDATION_WARNING_DISCRIMINATOR = Uint8Array.from([
+  190, 172, 138, 114, 56, 191, 120, 132,
+]);
+const EXECUTE_LIQUIDATION_DISCRIMINATOR = Uint8Array.from([
+  189, 55, 38, 121, 165, 84, 96, 124,
 ]);
 const DEPOSIT_LENDER_LIQUIDITY_DISCRIMINATOR = Uint8Array.from([
   64, 169, 108, 29, 20, 168, 185, 141,
@@ -510,6 +521,35 @@ export async function initializeBorrowerPrivyPolicyFromWallet({
   return sendAndConfirm(connection, wallet, new Transaction().add(ix));
 }
 
+export async function mintReputationFromWallet({
+  connection,
+  wallet,
+}: {
+  connection: Connection;
+  wallet: WalletContextState;
+}) {
+  if (!wallet.publicKey) throw new Error("Connect a wallet first");
+
+  const reputation = deriveReputation(wallet.publicKey);
+  const existing = await connection.getAccountInfo(reputation, "confirmed");
+  if (existing) {
+    throw new Error("Reputation account already exists for this wallet");
+  }
+
+  const ix = new TransactionInstruction({
+    programId: AXIOM_DEVNET.programId,
+    keys: [
+      { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+      { pubkey: PublicKey.default, isSigner: false, isWritable: false },
+      { pubkey: reputation, isSigner: false, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data: noArgsData(MINT_REPUTATION_NFT_DISCRIMINATOR),
+  });
+
+  return sendAndConfirm(connection, wallet, new Transaction().add(ix));
+}
+
 export async function disburseLoanFromWallet({
   borrower,
   loan,
@@ -798,6 +838,94 @@ export async function closeRepaymentStreamFromWallet({
       { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
     ],
     data: noArgsData(CLOSE_REPAYMENT_STREAM_DISCRIMINATOR),
+  });
+
+  return sendAndConfirm(connection, wallet, new Transaction().add(ix));
+}
+
+export async function issueLiquidationWarningFromWallet({
+  loan,
+  collateralValueUsdc,
+  loanValueUsdc,
+  connection,
+  wallet,
+}: {
+  loan: PublicKey;
+  collateralValueUsdc: number;
+  loanValueUsdc: number;
+  connection: Connection;
+  wallet: WalletContextState;
+}) {
+  if (!wallet.publicKey) throw new Error("Connect a wallet first");
+
+  const liquidationState = deriveLiquidationState(loan);
+  const existing = await connection.getAccountInfo(liquidationState, "confirmed");
+  if (existing) {
+    throw new Error("Liquidation warning already exists for this loan");
+  }
+
+  const data = new Uint8Array(24);
+  data.set(ISSUE_LIQUIDATION_WARNING_DISCRIMINATOR, 0);
+  data.set(encodeU64(BigInt(Math.floor(collateralValueUsdc * 1_000_000))), 8);
+  data.set(encodeU64(BigInt(Math.floor(loanValueUsdc * 1_000_000))), 16);
+
+  const ix = new TransactionInstruction({
+    programId: AXIOM_DEVNET.programId,
+    keys: [
+      { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
+      { pubkey: loan, isSigner: false, isWritable: false },
+      { pubkey: liquidationState, isSigner: false, isWritable: true },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+    ],
+    data: Buffer.from(data),
+  });
+
+  return sendAndConfirm(connection, wallet, new Transaction().add(ix));
+}
+
+export async function executeLiquidationFromWallet({
+  borrower,
+  loan,
+  connection,
+  wallet,
+}: {
+  borrower: PublicKey;
+  loan: PublicKey;
+  connection: Connection;
+  wallet: WalletContextState;
+}) {
+  if (!wallet.publicKey) throw new Error("Connect a wallet first");
+
+  const liquidationState = deriveLiquidationState(loan);
+  const collateralEscrow = deriveCollateralEscrow(loan);
+  const collateralVault = deriveCollateralVault(loan);
+  const reputation = deriveReputation(borrower);
+  const reputationAccount = await connection.getAccountInfo(
+    reputation,
+    "confirmed"
+  );
+  if (!reputationAccount) {
+    throw new Error("Borrower reputation account is missing");
+  }
+
+  const data = new Uint8Array(16);
+  data.set(EXECUTE_LIQUIDATION_DISCRIMINATOR, 0);
+  data.set(encodeU64(BigInt(0)), 8);
+
+  const ix = new TransactionInstruction({
+    programId: AXIOM_DEVNET.programId,
+    keys: [
+      { pubkey: wallet.publicKey, isSigner: true, isWritable: false },
+      { pubkey: loan, isSigner: false, isWritable: true },
+      { pubkey: liquidationState, isSigner: false, isWritable: true },
+      { pubkey: AXIOM_DEVNET.lendingPool, isSigner: false, isWritable: true },
+      { pubkey: AXIOM_DEVNET.usdcVault, isSigner: false, isWritable: true },
+      { pubkey: collateralEscrow, isSigner: false, isWritable: true },
+      { pubkey: collateralVault, isSigner: false, isWritable: true },
+      { pubkey: reputation, isSigner: false, isWritable: true },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+    ],
+    data: Buffer.from(data),
   });
 
   return sendAndConfirm(connection, wallet, new Transaction().add(ix));

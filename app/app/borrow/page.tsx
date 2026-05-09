@@ -28,8 +28,11 @@ import {
   claimRepaymentsToPoolFromWallet,
   closeRepaymentStreamFromWallet,
   disburseLoanFromWallet,
+  executeLiquidationFromWallet,
   fundRepaymentStreamFromWallet,
+  issueLiquidationWarningFromWallet,
   initRepaymentStreamFromWallet,
+  mintReputationFromWallet,
   registerFixtureCreditProof,
   requestLoanFromWallet,
 } from "@/lib/axiom-actions";
@@ -60,6 +63,12 @@ export default function BorrowPage() {
     message: "Connect a wallet to register a proof or request a loan.",
   });
   const [repaymentAmountUsdc, setRepaymentAmountUsdc] = useState(1);
+  const [adminLoanAddress, setAdminLoanAddress] = useState("");
+  const [adminBorrowerAddress, setAdminBorrowerAddress] = useState("");
+  const [liquidationCollateralValueUsdc, setLiquidationCollateralValueUsdc] =
+    useState(0.05);
+  const [liquidationLoanValueUsdc, setLiquidationLoanValueUsdc] =
+    useState(0.1);
   const borrowerState = useBorrowerState(publicKey);
   const livePool = useLivePool();
   const {
@@ -78,6 +87,7 @@ export default function BorrowPage() {
   const liveProof = borrowerState.data?.creditProof;
   const liveLoan = borrowerState.data?.loan;
   const liveStream = borrowerState.data?.repaymentStream;
+  const liveLiquidation = borrowerState.data?.liquidationState;
   const effectiveTier =
     (liveProof?.tier ?? credit.tier) as keyof typeof tierConfig;
   const effectiveTierConfig = tierConfig[effectiveTier];
@@ -176,27 +186,50 @@ export default function BorrowPage() {
     displayedStream.canClose &&
     isBorrowerWallet &&
     actionState.status !== "loading";
+  const effectiveAdminLoan = adminLoanAddress || liveLoan?.address || "";
+  const effectiveAdminBorrower =
+    adminBorrowerAddress || liveLoan?.borrower || publicKey?.toBase58() || "";
+  const canMintReputation = connected && actionState.status !== "loading";
+  const canIssueLiquidation =
+    isPoolAuthority &&
+    Boolean(effectiveAdminLoan) &&
+    liquidationCollateralValueUsdc > 0 &&
+    liquidationLoanValueUsdc > 0 &&
+    actionState.status !== "loading";
+  const canExecuteLiquidation =
+    isPoolAuthority &&
+    Boolean(effectiveAdminLoan) &&
+    Boolean(effectiveAdminBorrower) &&
+    actionState.status !== "loading";
 
   async function runAction(
     action:
       | "proof"
       | "loan"
+      | "mintReputation"
       | "disburse"
       | "initStream"
       | "fundStream"
       | "claimStream"
       | "closeStream"
+      | "issueLiquidation"
+      | "executeLiquidation"
   ) {
     setActionState({
       status: "loading",
       message: {
         proof: "Waiting for wallet approval to register the devnet credit proof.",
         loan: "Waiting for wallet approval to create the loan request.",
+        mintReputation: "Waiting for wallet approval to create reputation state.",
         disburse: "Waiting for pool-authority approval to disburse the loan.",
         initStream: "Waiting for borrower approval to initialize the stream vault.",
         fundStream: "Waiting for borrower approval to fund the repayment stream.",
         claimStream: "Waiting for pool-authority approval to claim repayments.",
         closeStream: "Waiting for borrower approval to close the repaid stream.",
+        issueLiquidation:
+          "Waiting for pool-authority approval to issue liquidation warning.",
+        executeLiquidation:
+          "Waiting for pool-authority approval to execute liquidation.",
       }[action],
     });
 
@@ -209,6 +242,23 @@ export default function BorrowPage() {
           amountUsdc: loanRequest.principalUsdt,
           durationDays: loanRequest.durationDays,
           collateralUsdc: derivedCollateralUsdt,
+          connection,
+          wallet,
+        });
+      } else if (action === "mintReputation") {
+        signature = await mintReputationFromWallet({ connection, wallet });
+      } else if (action === "issueLiquidation") {
+        signature = await issueLiquidationWarningFromWallet({
+          loan: new PublicKey(effectiveAdminLoan),
+          collateralValueUsdc: liquidationCollateralValueUsdc,
+          loanValueUsdc: liquidationLoanValueUsdc,
+          connection,
+          wallet,
+        });
+      } else if (action === "executeLiquidation") {
+        signature = await executeLiquidationFromWallet({
+          borrower: new PublicKey(effectiveAdminBorrower),
+          loan: new PublicKey(effectiveAdminLoan),
           connection,
           wallet,
         });
@@ -623,6 +673,125 @@ export default function BorrowPage() {
         </Card>
       </section>
 
+      <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Collateral terminal state</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <InfoPanel
+                icon={<ShieldCheck className="h-5 w-5" />}
+                label="Escrow vault"
+                value={liveLoan?.collateralVault ?? "No escrow"}
+              />
+              <InfoPanel
+                icon={<Clock3 className="h-5 w-5" />}
+                label="Release"
+                value={displayedStream.canClose ? "Available" : displayedStream.endDate}
+              />
+              <InfoPanel
+                icon={<Activity className="h-5 w-5" />}
+                label="Liquidation"
+                value={
+                  liveLiquidation
+                    ? liveLiquidation.canExecute
+                      ? "Executable"
+                      : liveLiquidation.graceEndsAt
+                    : "No warning"
+                }
+              />
+              <InfoPanel
+                icon={<CircleDollarSign className="h-5 w-5" />}
+                label="Recovered"
+                value={`$${(liveLiquidation?.recoveredUsdc ?? 0).toLocaleString()}`}
+              />
+            </div>
+            <Button
+              disabled={!canMintReputation}
+              onClick={() => void runAction("mintReputation")}
+              variant="outline"
+            >
+              Create reputation state
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Liquidation operations</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <label className="space-y-2">
+              <span className="text-sm font-medium">Loan address</span>
+              <input
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                onChange={(event) => setAdminLoanAddress(event.target.value)}
+                placeholder={liveLoan?.address ?? "Loan PDA"}
+                value={adminLoanAddress}
+              />
+            </label>
+            <label className="space-y-2">
+              <span className="text-sm font-medium">Borrower address</span>
+              <input
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                onChange={(event) => setAdminBorrowerAddress(event.target.value)}
+                placeholder={liveLoan?.borrower ?? "Borrower wallet"}
+                value={adminBorrowerAddress}
+              />
+            </label>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="space-y-2">
+                <span className="text-sm font-medium">Collateral value</span>
+                <input
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  min={0.01}
+                  onChange={(event) =>
+                    setLiquidationCollateralValueUsdc(Number(event.target.value))
+                  }
+                  step="0.01"
+                  type="number"
+                  value={liquidationCollateralValueUsdc}
+                />
+              </label>
+              <label className="space-y-2">
+                <span className="text-sm font-medium">Loan value</span>
+                <input
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  min={0.01}
+                  onChange={(event) =>
+                    setLiquidationLoanValueUsdc(Number(event.target.value))
+                  }
+                  step="0.01"
+                  type="number"
+                  value={liquidationLoanValueUsdc}
+                />
+              </label>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <Button
+                disabled={!canIssueLiquidation}
+                onClick={() => void runAction("issueLiquidation")}
+                variant="outline"
+              >
+                Issue warning
+              </Button>
+              <Button
+                disabled={!canExecuteLiquidation}
+                onClick={() => void runAction("executeLiquidation")}
+              >
+                Execute liquidation
+              </Button>
+            </div>
+            {!isPoolAuthority ? (
+              <p className="text-sm text-muted-foreground">
+                Pool authority wallet is required for liquidation operations.
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      </section>
+
       {process.env.NEXT_PUBLIC_PRIVY_APP_ID ? (
         <section>
           <PrivyRepaymentPanel
@@ -671,7 +840,7 @@ function InfoPanel({
     <div className="rounded-md border border-border p-4">
       <div className="text-primary">{icon}</div>
       <p className="mt-3 text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
+      <p className="mt-1 break-words text-base font-semibold">{value}</p>
     </div>
   );
 }

@@ -52,10 +52,22 @@ export type LiveRepaymentStream = {
   canClose: boolean;
 };
 
+export type LiveLiquidationState = {
+  address: string;
+  collateralValueUsdc: number;
+  liquidationThresholdUsdc: number;
+  recoveredUsdc: number;
+  warningActive: boolean;
+  graceEndsAt: string;
+  graceEndsAtUnix: number;
+  canExecute: boolean;
+};
+
 export type LiveBorrowerState = {
   creditProof: LiveCreditProof | null;
   loan: LiveLoan | null;
   repaymentStream: LiveRepaymentStream | null;
+  liquidationState: LiveLiquidationState | null;
 };
 
 function readU64(data: Uint8Array, offset: number) {
@@ -146,6 +158,22 @@ export function deriveCollateralVault(loan: PublicKey) {
   return address;
 }
 
+export function deriveLiquidationState(loan: PublicKey) {
+  const [address] = PublicKey.findProgramAddressSync(
+    [Buffer.from("liquidation"), loan.toBuffer()],
+    AXIOM_DEVNET.programId
+  );
+  return address;
+}
+
+export function deriveReputation(wallet: PublicKey) {
+  const [address] = PublicKey.findProgramAddressSync(
+    [Buffer.from("reputation"), wallet.toBuffer()],
+    AXIOM_DEVNET.programId
+  );
+  return address;
+}
+
 export async function fetchBorrowerState(
   wallet: PublicKey
 ): Promise<LiveBorrowerState> {
@@ -203,14 +231,15 @@ export async function fetchBorrowerState(
     : null;
 
   if (!loan) {
-    return { creditProof, loan, repaymentStream: null };
+    return { creditProof, loan, repaymentStream: null, liquidationState: null };
   }
 
   const repaymentStreamAddress = deriveRepaymentStream(loanAddress);
-  const repaymentStreamAccount = await connection.getAccountInfo(
-    repaymentStreamAddress,
-    "confirmed"
-  );
+  const liquidationStateAddress = deriveLiquidationState(loanAddress);
+  const [repaymentStreamAccount, liquidationStateAccount] = await Promise.all([
+    connection.getAccountInfo(repaymentStreamAddress, "confirmed"),
+    connection.getAccountInfo(liquidationStateAddress, "confirmed"),
+  ]);
 
   const repaymentStream = repaymentStreamAccount
     ? (() => {
@@ -265,5 +294,26 @@ export async function fetchBorrowerState(
       })()
     : null;
 
-  return { creditProof, loan, repaymentStream };
+  const liquidationState = liquidationStateAccount
+    ? (() => {
+        const data = liquidationStateAccount.data;
+        const warningIssuedAt = Number(readI64(data, 40));
+        const graceSeconds = Number(readI64(data, 48));
+        const graceEndsAt = warningIssuedAt + graceSeconds;
+        const now = Math.floor(Date.now() / 1000);
+
+        return {
+          address: liquidationStateAddress.toBase58(),
+          collateralValueUsdc: uiUsdc(readU64(data, 56)),
+          liquidationThresholdUsdc: uiUsdc(readU64(data, 64)),
+          recoveredUsdc: uiUsdc(readU64(data, 72)),
+          warningActive: data[80] === 1,
+          graceEndsAt: formatDateTime(graceEndsAt),
+          graceEndsAtUnix: graceEndsAt,
+          canExecute: data[80] === 1 && now >= graceEndsAt,
+        };
+      })()
+    : null;
+
+  return { creditProof, loan, repaymentStream, liquidationState };
 }
