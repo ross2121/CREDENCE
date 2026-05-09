@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,13 +46,15 @@ export default function LendPage() {
     lenderAction,
     yieldAllocation,
     updateLenderAction,
-  } = useAxiomStore((state) => ({
-    pool: state.pool,
-    lenderPosition: state.lenderPosition,
-    lenderAction: state.lenderAction,
-    yieldAllocation: state.yieldAllocation,
-    updateLenderAction: state.updateLenderAction,
-  }));
+  } = useAxiomStore(
+    useShallow((state) => ({
+      pool: state.pool,
+      lenderPosition: state.lenderPosition,
+      lenderAction: state.lenderAction,
+      yieldAllocation: state.yieldAllocation,
+      updateLenderAction: state.updateLenderAction,
+    }))
+  );
   const livePool = useLivePool();
   const live = livePool.data;
   const displayPool = useMemo(

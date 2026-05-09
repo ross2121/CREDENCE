@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   TrendingUp,
 } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
@@ -18,11 +19,13 @@ import { demoApi } from "@/lib/demo-api";
 import { useAxiomStore } from "@/store/use-axiom-store";
 
 export default function AnalyticsPage() {
-  const { pool, analytics, lenderPosition } = useAxiomStore((state) => ({
-    pool: state.pool,
-    analytics: state.analytics,
-    lenderPosition: state.lenderPosition,
-  }));
+  const { pool, analytics, lenderPosition } = useAxiomStore(
+    useShallow((state) => ({
+      pool: state.pool,
+      analytics: state.analytics,
+      lenderPosition: state.lenderPosition,
+    }))
+  );
   const livePool = useLivePool();
   const live = livePool.data;
   const totalDeposits = live?.totalDepositsUsdc ?? pool.totalDepositsUsdt;

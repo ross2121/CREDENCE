@@ -16,6 +16,7 @@ import { PublicKey } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,13 +78,15 @@ export default function BorrowPage() {
     activeLoan,
     repaymentStream,
     updateLoanRequest,
-  } = useAxiomStore((state) => ({
-    credit: state.credit,
-    loanRequest: state.loanRequest,
-    activeLoan: state.activeLoan,
-    repaymentStream: state.repaymentStream,
-    updateLoanRequest: state.updateLoanRequest,
-  }));
+  } = useAxiomStore(
+    useShallow((state) => ({
+      credit: state.credit,
+      loanRequest: state.loanRequest,
+      activeLoan: state.activeLoan,
+      repaymentStream: state.repaymentStream,
+      updateLoanRequest: state.updateLoanRequest,
+    }))
+  );
   const liveProof = borrowerState.data?.creditProof;
   const liveLoan = borrowerState.data?.loan;
   const liveStream = borrowerState.data?.repaymentStream;

@@ -90,3 +90,5 @@ All side track submissions also due by May 11.
 Anchor contract implementation is available in this repo with demo defaults for hackathon flows. Production-style builds disable mock protocol paths and are tracked in [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md).
 
 Devnet deployment and demo commands are tracked in [docs/DEVNET_RUNBOOK.md](docs/DEVNET_RUNBOOK.md).
+
+Full product documentation for the renamed project is tracked in [docs/CREDENCE_PROJECT.md](docs/CREDENCE_PROJECT.md).
