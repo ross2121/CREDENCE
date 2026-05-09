@@ -7,6 +7,12 @@ import { join, resolve } from "path";
 const DEFAULT_RPC = "https://api.devnet.solana.com";
 const DEFAULT_PROGRAM_ID = "6Xrd8Ymz9vxecWjifKern6LAzXQ2XKcS4D1zsJ8ENLpK";
 const DEFAULT_COLLATERAL_MINT = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+const TOKEN_PROGRAM_ID = new PublicKey(
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+);
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
+  "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+);
 
 function expandPath(path: string) {
   if (path === "~") return homedir();
@@ -17,6 +23,14 @@ function expandPath(path: string) {
 function loadWallet(path: string) {
   const secret = JSON.parse(readFileSync(expandPath(path), "utf8"));
   return Keypair.fromSecretKey(Uint8Array.from(secret));
+}
+
+function getAssociatedTokenAddress(mint: PublicKey, owner: PublicKey) {
+  const [address] = PublicKey.findProgramAddressSync(
+    [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+  return address;
 }
 
 async function main() {
@@ -53,6 +67,18 @@ async function main() {
     [Buffer.from("loan"), wallet.publicKey.toBuffer(), creditProof.toBuffer()],
     programId
   );
+  const [collateralEscrow] = PublicKey.findProgramAddressSync(
+    [Buffer.from("collateral_escrow"), loan.toBuffer()],
+    programId
+  );
+  const [collateralVault] = PublicKey.findProgramAddressSync(
+    [Buffer.from("collateral_vault"), loan.toBuffer()],
+    programId
+  );
+  const borrowerCollateral = getAssociatedTokenAddress(
+    collateralMint,
+    wallet.publicKey
+  );
 
   const existingLoan = await connection.getAccountInfo(loan, "confirmed");
   if (existingLoan) {
@@ -73,7 +99,11 @@ async function main() {
       borrower: wallet.publicKey,
       creditProof,
       collateralMint,
+      borrowerCollateral,
       loan,
+      collateralEscrow,
+      collateralVault,
+      tokenProgram: TOKEN_PROGRAM_ID,
       systemProgram: SystemProgram.programId,
     })
     .rpc();
@@ -88,6 +118,8 @@ async function main() {
   console.log("Borrower:", wallet.publicKey.toBase58());
   console.log("Credit proof:", creditProof.toBase58());
   console.log("Loan:", loan.toBase58());
+  console.log("Collateral escrow:", collateralEscrow.toBase58());
+  console.log("Collateral vault:", collateralVault.toBase58());
   console.log("Amount:", amountUsdc);
   console.log("Duration days:", durationDays);
   console.log("Collateral:", collateralUsdc);

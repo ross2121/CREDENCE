@@ -24,6 +24,10 @@ async function main() {
     [Buffer.from("lending_pool"), usdtVault.toBuffer()],
     programId
   );
+  const [collateralEscrow] = PublicKey.findProgramAddressSync(
+    [Buffer.from("collateral_escrow"), loan.toBuffer()],
+    programId
+  );
 
   const { ata: borrowerUsdt, instruction } = await ensureAssociatedTokenAccount(
     connection,
@@ -43,6 +47,7 @@ async function main() {
         lendingPool,
         usdtVault,
         loan,
+        collateralEscrow,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .instruction()
@@ -53,6 +58,7 @@ async function main() {
   console.log("Borrower:", borrower.toBase58());
   console.log("Borrower USDC ATA:", borrowerUsdt.toBase58());
   console.log("Loan:", loan.toBase58());
+  console.log("Collateral escrow:", collateralEscrow.toBase58());
   console.log("Signature:", signature);
 }
 

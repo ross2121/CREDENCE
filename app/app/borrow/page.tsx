@@ -101,6 +101,7 @@ export default function BorrowPage() {
     dueDate: liveLoan?.dueDate ?? activeLoan.dueDate,
     status: liveLoan?.status ?? activeLoan.status,
     disbursed: liveLoan?.disbursed ?? false,
+    collateralUsdc: liveLoan?.collateralUsdc ?? derivedCollateralUsdt,
     outstandingPrincipalUsdt:
       liveLoan?.outstandingPrincipalUsdc ??
       Math.max(activeLoan.principalUsdt - activeLoan.repaidUsdt, 0),
@@ -487,6 +488,24 @@ export default function BorrowPage() {
                 icon={<Send className="h-5 w-5" />}
                 label="Funding"
                 value={displayedLoan.disbursed ? "Disbursed" : "Requested"}
+              />
+              <InfoPanel
+                icon={<ShieldCheck className="h-5 w-5" />}
+                label="Collateral"
+                value={`$${displayedLoan.collateralUsdc.toLocaleString()}`}
+              />
+              <InfoPanel
+                icon={<Activity className="h-5 w-5" />}
+                label="Escrow"
+                value={
+                  liveLoan?.collateralLiquidated
+                    ? "Liquidated"
+                    : liveLoan?.collateralReleased
+                      ? "Released"
+                      : liveLoan?.collateralEscrowed
+                        ? "Locked"
+                        : "Not locked"
+                }
               />
             </div>
             <div>

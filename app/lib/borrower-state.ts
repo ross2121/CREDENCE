@@ -19,6 +19,10 @@ export type LiveLoan = {
   repaidUsdc: number;
   collateralMint: string;
   collateralUsdc: number;
+  collateralVault: string | null;
+  collateralEscrowed: boolean;
+  collateralReleased: boolean;
+  collateralLiquidated: boolean;
   interestBps: number;
   dueDate: string;
   dueTimeUnix: number;
@@ -126,15 +130,33 @@ export function deriveRepaymentStream(loan: PublicKey) {
   return address;
 }
 
+export function deriveCollateralEscrow(loan: PublicKey) {
+  const [address] = PublicKey.findProgramAddressSync(
+    [Buffer.from("collateral_escrow"), loan.toBuffer()],
+    AXIOM_DEVNET.programId
+  );
+  return address;
+}
+
+export function deriveCollateralVault(loan: PublicKey) {
+  const [address] = PublicKey.findProgramAddressSync(
+    [Buffer.from("collateral_vault"), loan.toBuffer()],
+    AXIOM_DEVNET.programId
+  );
+  return address;
+}
+
 export async function fetchBorrowerState(
   wallet: PublicKey
 ): Promise<LiveBorrowerState> {
   const connection = new Connection(AXIOM_DEVNET.rpcUrl, "confirmed");
   const creditProofAddress = deriveCreditProof(wallet);
   const loanAddress = deriveLoan(wallet, creditProofAddress);
-  const [creditProofAccount, loanAccount] = await Promise.all([
+  const collateralEscrowAddress = deriveCollateralEscrow(loanAddress);
+  const [creditProofAccount, loanAccount, collateralEscrowAccount] = await Promise.all([
     connection.getAccountInfo(creditProofAddress, "confirmed"),
     connection.getAccountInfo(loanAddress, "confirmed"),
+    connection.getAccountInfo(collateralEscrowAddress, "confirmed"),
   ]);
 
   const creditProof = creditProofAccount
@@ -148,6 +170,15 @@ export async function fetchBorrowerState(
       }
     : null;
 
+  const collateralEscrow = collateralEscrowAccount
+    ? {
+        collateralVault: readPubkey(collateralEscrowAccount.data, 104).toBase58(),
+        escrowed: collateralEscrowAccount.data[144] === 1,
+        released: collateralEscrowAccount.data[145] === 1,
+        liquidated: collateralEscrowAccount.data[146] === 1,
+      }
+    : null;
+
   const loan = loanAccount
     ? {
         address: loanAddress.toBase58(),
@@ -156,6 +187,10 @@ export async function fetchBorrowerState(
         repaidUsdc: uiUsdc(readU64(loanAccount.data, 145)),
         collateralMint: readPubkey(loanAccount.data, 56).toBase58(),
         collateralUsdc: uiUsdc(readU64(loanAccount.data, 88)),
+        collateralVault: collateralEscrow?.collateralVault ?? null,
+        collateralEscrowed: collateralEscrow?.escrowed ?? false,
+        collateralReleased: collateralEscrow?.released ?? false,
+        collateralLiquidated: collateralEscrow?.liquidated ?? false,
         interestBps: Number(readU64(loanAccount.data, 48)),
         dueDate: formatDate(Number(readI64(loanAccount.data, 137))),
         dueTimeUnix: Number(readI64(loanAccount.data, 137)),

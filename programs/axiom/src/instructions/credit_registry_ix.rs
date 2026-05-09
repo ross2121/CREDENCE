@@ -1,9 +1,10 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 use solana_keccak_hasher::hash;
 
 use crate::{
-    verify_credit_proof, AxiomError, CreditProof, CreditProofRegistered, CreditTier, Loan,
-    LoanRequestArgs, LoanRequested,
+    verify_credit_proof, AxiomError, CollateralEscrow, CollateralEscrowed, CreditProof,
+    CreditProofRegistered, CreditTier, Loan, LoanRequestArgs, LoanRequested,
 };
 
 #[derive(Accounts)]
@@ -30,8 +31,13 @@ pub struct RequestLoan<'info> {
         bump = credit_proof.bump
     )]
     pub credit_proof: Account<'info, CreditProof>,
-    /// CHECK: Stored as the collateral asset identifier. Valuation is added in the liquidation feature.
-    pub collateral_mint: UncheckedAccount<'info>,
+    pub collateral_mint: Account<'info, Mint>,
+    #[account(
+        mut,
+        constraint = borrower_collateral.owner == borrower.key() @ AxiomError::Unauthorized,
+        constraint = borrower_collateral.mint == collateral_mint.key() @ AxiomError::InvalidCollateralVault
+    )]
+    pub borrower_collateral: Account<'info, TokenAccount>,
     #[account(
         init,
         payer = borrower,
@@ -40,6 +46,24 @@ pub struct RequestLoan<'info> {
         bump
     )]
     pub loan: Account<'info, Loan>,
+    #[account(
+        init,
+        payer = borrower,
+        space = CollateralEscrow::LEN,
+        seeds = [b"collateral_escrow", loan.key().as_ref()],
+        bump
+    )]
+    pub collateral_escrow: Account<'info, CollateralEscrow>,
+    #[account(
+        init,
+        payer = borrower,
+        token::mint = collateral_mint,
+        token::authority = collateral_escrow,
+        seeds = [b"collateral_vault", loan.key().as_ref()],
+        bump
+    )]
+    pub collateral_vault: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 
@@ -104,6 +128,20 @@ pub fn handle_request_loan(
         ctx.bumps.loan,
     )?;
 
+    ctx.accounts.collateral_escrow.initialize(
+        ctx.accounts.loan.key(),
+        ctx.accounts.borrower.key(),
+        ctx.accounts.collateral_mint.key(),
+        ctx.accounts.collateral_vault.key(),
+        collateral_amount,
+        ctx.bumps.collateral_escrow,
+    )?;
+
+    token::transfer(
+        ctx.accounts.collateral_transfer_context(),
+        collateral_amount,
+    )?;
+
     emit!(LoanRequested {
         loan: ctx.accounts.loan.key(),
         borrower: ctx.accounts.borrower.key(),
@@ -111,6 +149,25 @@ pub fn handle_request_loan(
         tier: proof.tier,
         due_time: ctx.accounts.loan.due_time,
     });
+    emit!(CollateralEscrowed {
+        loan: ctx.accounts.loan.key(),
+        borrower: ctx.accounts.borrower.key(),
+        collateral_vault: ctx.accounts.collateral_vault.key(),
+        amount: collateral_amount,
+    });
 
     Ok(())
+}
+
+impl<'info> RequestLoan<'info> {
+    fn collateral_transfer_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        CpiContext::new(
+            self.token_program.to_account_info(),
+            Transfer {
+                from: self.borrower_collateral.to_account_info(),
+                to: self.collateral_vault.to_account_info(),
+                authority: self.borrower.to_account_info(),
+            },
+        )
+    }
 }

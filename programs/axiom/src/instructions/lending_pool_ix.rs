@@ -2,8 +2,8 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 use crate::{
-    AxiomError, LenderPosition, LenderPositionUpdated, LendingPool, LiquidityDeposited,
-    LiquidityWithdrawn, Loan, LoanDisbursed, LoanStatus,
+    AxiomError, CollateralEscrow, LenderPosition, LenderPositionUpdated, LendingPool,
+    LiquidityDeposited, LiquidityWithdrawn, Loan, LoanDisbursed, LoanStatus,
 };
 
 #[derive(Accounts)]
@@ -137,6 +137,13 @@ pub struct DisburseLoan<'info> {
     pub usdt_vault: Account<'info, TokenAccount>,
     #[account(mut)]
     pub loan: Account<'info, Loan>,
+    #[account(
+        seeds = [b"collateral_escrow", loan.key().as_ref()],
+        bump = collateral_escrow.bump,
+        has_one = loan,
+        constraint = collateral_escrow.borrower == loan.borrower @ AxiomError::Unauthorized
+    )]
+    pub collateral_escrow: Account<'info, CollateralEscrow>,
     pub token_program: Program<'info, Token>,
 }
 
@@ -291,6 +298,7 @@ pub fn handle_disburse_loan(ctx: Context<DisburseLoan>) -> Result<()> {
         ctx.accounts.loan.stream_rate == 0,
         AxiomError::LoanAlreadyDisbursed
     );
+    ctx.accounts.collateral_escrow.require_locked()?;
 
     let amount = ctx.accounts.loan.principal;
     require!(amount > 0, AxiomError::InvalidAmount);

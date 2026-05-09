@@ -28,6 +28,12 @@ pub enum AxiomError {
     LoanExceedsTierLimit,
     #[msg("Insufficient collateral for this credit tier")]
     InsufficientCollateral,
+    #[msg("Collateral has not been escrowed")]
+    CollateralNotEscrowed,
+    #[msg("Collateral has already been released or liquidated")]
+    CollateralAlreadyReleased,
+    #[msg("Collateral vault does not match the loan escrow")]
+    InvalidCollateralVault,
     #[msg("Credit proof does not belong to this borrower")]
     InvalidCreditProofOwner,
     #[msg("Loan duration must be greater than zero")]

@@ -14,6 +14,8 @@ export const AXIOM_SEEDS = {
   creditProof: "credit_proof",
   repaymentStream: "repayment_stream",
   ikaPolicy: "ika_policy",
+  collateralEscrow: "collateral_escrow",
+  collateralVault: "collateral_vault",
 };
 
 export class AxiomClient {
@@ -36,6 +38,20 @@ export class AxiomClient {
   deriveRepaymentStream(loan: PublicKey): [PublicKey, number] {
     return PublicKey.findProgramAddressSync(
       [Buffer.from(AXIOM_SEEDS.repaymentStream), loan.toBuffer()],
+      this.program.programId
+    );
+  }
+
+  deriveCollateralEscrow(loan: PublicKey): [PublicKey, number] {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from(AXIOM_SEEDS.collateralEscrow), loan.toBuffer()],
+      this.program.programId
+    );
+  }
+
+  deriveCollateralVault(loan: PublicKey): [PublicKey, number] {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from(AXIOM_SEEDS.collateralVault), loan.toBuffer()],
       this.program.programId
     );
   }

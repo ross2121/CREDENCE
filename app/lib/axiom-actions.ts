@@ -10,6 +10,8 @@ import {
 import type { WalletContextState } from "@solana/wallet-adapter-react";
 import { Buffer } from "buffer";
 import {
+  deriveCollateralEscrow,
+  deriveCollateralVault,
   deriveCreditProof,
   deriveLoan,
   deriveRepaymentStream,
@@ -405,6 +407,22 @@ export async function requestLoanFromWallet({
   }
 
   const loan = deriveLoan(wallet.publicKey, creditProof);
+  const collateralEscrow = deriveCollateralEscrow(loan);
+  const collateralVault = deriveCollateralVault(loan);
+  const borrowerCollateral = getAssociatedTokenAddress(
+    AXIOM_DEVNET.usdcMint,
+    wallet.publicKey
+  );
+  const borrowerCollateralAccount = await connection.getAccountInfo(
+    borrowerCollateral,
+    "confirmed"
+  );
+  if (!borrowerCollateralAccount) {
+    throw new Error(
+      `No devnet USDC collateral account found for this wallet: ${borrowerCollateral.toBase58()}`
+    );
+  }
+
   const data = new Uint8Array(8 + 8 + 8 + 8 + 32);
   let offset = 0;
   data.set(REQUEST_LOAN_DISCRIMINATOR, offset);
@@ -423,7 +441,11 @@ export async function requestLoanFromWallet({
       { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
       { pubkey: creditProof, isSigner: false, isWritable: false },
       { pubkey: AXIOM_DEVNET.usdcMint, isSigner: false, isWritable: false },
+      { pubkey: borrowerCollateral, isSigner: false, isWritable: true },
       { pubkey: loan, isSigner: false, isWritable: true },
+      { pubkey: collateralEscrow, isSigner: false, isWritable: true },
+      { pubkey: collateralVault, isSigner: false, isWritable: true },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
     data: Buffer.from(data),
@@ -519,6 +541,11 @@ export async function disburseLoanFromWallet({
         { pubkey: AXIOM_DEVNET.lendingPool, isSigner: false, isWritable: true },
         { pubkey: AXIOM_DEVNET.usdcVault, isSigner: false, isWritable: true },
         { pubkey: loan, isSigner: false, isWritable: true },
+        {
+          pubkey: deriveCollateralEscrow(loan),
+          isSigner: false,
+          isWritable: false,
+        },
         { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
       ],
       data: noArgsData(DISBURSE_LOAN_DISCRIMINATOR),
@@ -757,6 +784,18 @@ export async function closeRepaymentStreamFromWallet({
       { pubkey: wallet.publicKey, isSigner: true, isWritable: true },
       { pubkey: loan, isSigner: false, isWritable: true },
       { pubkey: repaymentStream, isSigner: false, isWritable: true },
+      {
+        pubkey: deriveCollateralEscrow(loan),
+        isSigner: false,
+        isWritable: true,
+      },
+      { pubkey: deriveCollateralVault(loan), isSigner: false, isWritable: true },
+      {
+        pubkey: getAssociatedTokenAddress(AXIOM_DEVNET.usdcMint, wallet.publicKey),
+        isSigner: false,
+        isWritable: true,
+      },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
     ],
     data: noArgsData(CLOSE_REPAYMENT_STREAM_DISCRIMINATOR),
   });

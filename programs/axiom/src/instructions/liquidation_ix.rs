@@ -1,7 +1,9 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 use crate::{
-    AxiomError, CollateralValuation, LendingPool, LiquidationState, Loan, ReputationAccount,
+    AxiomError, CollateralEscrow, CollateralLiquidated, CollateralValuation, LendingPool,
+    LiquidationState, Loan, ReputationAccount,
 };
 
 #[event]
@@ -40,14 +42,33 @@ pub struct ExecuteLiquidation<'info> {
         bump = liquidation_state.bump
     )]
     pub liquidation_state: Account<'info, LiquidationState>,
-    #[account(mut)]
+    #[account(
+        mut,
+        has_one = usdt_vault @ AxiomError::InvalidVault,
+    )]
     pub lending_pool: Account<'info, LendingPool>,
+    #[account(mut)]
+    pub usdt_vault: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        seeds = [b"collateral_escrow", loan.key().as_ref()],
+        bump = collateral_escrow.bump,
+        has_one = loan,
+        has_one = collateral_vault @ AxiomError::InvalidCollateralVault
+    )]
+    pub collateral_escrow: Account<'info, CollateralEscrow>,
+    #[account(
+        mut,
+        constraint = collateral_vault.mint == usdt_vault.mint @ AxiomError::InvalidCollateralVault
+    )]
+    pub collateral_vault: Account<'info, TokenAccount>,
     #[account(
         mut,
         seeds = [b"reputation", loan.borrower.as_ref()],
         bump = reputation.bump
     )]
     pub reputation: Account<'info, ReputationAccount>,
+    pub token_program: Program<'info, Token>,
 }
 
 pub fn handle_issue_liquidation_warning(
@@ -81,7 +102,7 @@ pub fn handle_issue_liquidation_warning(
 
 pub fn handle_execute_liquidation(
     ctx: Context<ExecuteLiquidation>,
-    recovered_usdt: u64,
+    _recovered_usdt: u64,
 ) -> Result<()> {
     require!(
         ctx.accounts.reputation.wallet == ctx.accounts.loan.borrower,
@@ -89,14 +110,47 @@ pub fn handle_execute_liquidation(
     );
 
     let now = Clock::get()?.unix_timestamp;
+    let recovered_usdt = ctx.accounts.collateral_escrow.liquidate()?;
     let outstanding =
         ctx.accounts
             .liquidation_state
             .execute(&mut ctx.accounts.loan, recovered_usdt, now)?;
+
+    let loan_key = ctx.accounts.loan.key();
+    let signer_seeds: &[&[&[u8]]] = &[&[
+        b"collateral_escrow",
+        loan_key.as_ref(),
+        &[ctx.accounts.collateral_escrow.bump],
+    ]];
+    token::transfer(
+        ctx.accounts
+            .liquidate_collateral_context()
+            .with_signer(signer_seeds),
+        recovered_usdt,
+    )?;
+
     ctx.accounts
         .lending_pool
         .recover_liquidation(recovered_usdt, outstanding)?;
+    emit!(CollateralLiquidated {
+        loan: ctx.accounts.loan.key(),
+        borrower: ctx.accounts.loan.borrower,
+        amount: recovered_usdt,
+    });
     ctx.accounts
         .reputation
         .slash_for_default(&ctx.accounts.loan, now)
+}
+
+impl<'info> ExecuteLiquidation<'info> {
+    fn liquidate_collateral_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        CpiContext::new(
+            self.token_program.to_account_info(),
+            Transfer {
+                from: self.collateral_vault.to_account_info(),
+                to: self.usdt_vault.to_account_info(),
+                authority: self.collateral_escrow.to_account_info(),
+            },
+        )
+    }
 }

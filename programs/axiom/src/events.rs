@@ -49,6 +49,28 @@ pub struct LoanRequested {
 }
 
 #[event]
+pub struct CollateralEscrowed {
+    pub loan: Pubkey,
+    pub borrower: Pubkey,
+    pub collateral_vault: Pubkey,
+    pub amount: u64,
+}
+
+#[event]
+pub struct CollateralReleased {
+    pub loan: Pubkey,
+    pub borrower: Pubkey,
+    pub amount: u64,
+}
+
+#[event]
+pub struct CollateralLiquidated {
+    pub loan: Pubkey,
+    pub borrower: Pubkey,
+    pub amount: u64,
+}
+
+#[event]
 pub struct RepaymentClaimed {
     pub loan: Pubkey,
     pub claimant: Pubkey,

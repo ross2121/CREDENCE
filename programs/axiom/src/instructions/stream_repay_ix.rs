@@ -2,8 +2,8 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 use crate::{
-    AxiomError, IkaPolicy, IkaPolicyKind, Loan, RepaymentClaimed, RepaymentStream,
-    RepaymentStreamArgs,
+    AxiomError, CollateralEscrow, CollateralReleased, IkaPolicy, IkaPolicyKind, Loan,
+    RepaymentClaimed, RepaymentStream, RepaymentStreamArgs,
 };
 
 #[derive(Accounts)]
@@ -102,6 +102,24 @@ pub struct CloseStream<'info> {
         bump = repayment_stream.bump
     )]
     pub repayment_stream: Account<'info, RepaymentStream>,
+    #[account(
+        mut,
+        seeds = [b"collateral_escrow", loan.key().as_ref()],
+        bump = collateral_escrow.bump,
+        has_one = loan,
+        has_one = borrower @ AxiomError::Unauthorized,
+        has_one = collateral_vault @ AxiomError::InvalidCollateralVault
+    )]
+    pub collateral_escrow: Account<'info, CollateralEscrow>,
+    #[account(mut)]
+    pub collateral_vault: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        constraint = borrower_collateral.owner == borrower.key() @ AxiomError::Unauthorized,
+        constraint = borrower_collateral.mint == collateral_vault.mint @ AxiomError::InvalidCollateralVault
+    )]
+    pub borrower_collateral: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
 }
 
 pub fn handle_init_repayment_stream(ctx: Context<InitRepayStream>) -> Result<()> {
@@ -184,7 +202,28 @@ pub fn handle_close_repayment_stream(ctx: Context<CloseStream>) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
     ctx.accounts
         .repayment_stream
-        .close_stream(&mut ctx.accounts.loan, now)
+        .close_stream(&mut ctx.accounts.loan, now)?;
+
+    let amount = ctx.accounts.collateral_escrow.release()?;
+    let loan_key = ctx.accounts.loan.key();
+    let signer_seeds: &[&[&[u8]]] = &[&[
+        b"collateral_escrow",
+        loan_key.as_ref(),
+        &[ctx.accounts.collateral_escrow.bump],
+    ]];
+
+    token::transfer(
+        ctx.accounts
+            .release_collateral_context()
+            .with_signer(signer_seeds),
+        amount,
+    )?;
+    emit!(CollateralReleased {
+        loan: ctx.accounts.loan.key(),
+        borrower: ctx.accounts.borrower.key(),
+        amount,
+    });
+    Ok(())
 }
 
 impl<'info> FundStream<'info> {
@@ -221,6 +260,19 @@ impl<'info> ClaimRepayments<'info> {
                 from: self.stream_vault.to_account_info(),
                 to: self.destination_usdt.to_account_info(),
                 authority: self.repayment_stream.to_account_info(),
+            },
+        )
+    }
+}
+
+impl<'info> CloseStream<'info> {
+    fn release_collateral_context(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        CpiContext::new(
+            self.token_program.to_account_info(),
+            Transfer {
+                from: self.collateral_vault.to_account_info(),
+                to: self.borrower_collateral.to_account_info(),
+                authority: self.collateral_escrow.to_account_info(),
             },
         )
     }

@@ -1,3 +1,4 @@
+pub mod collateral_escrow;
 pub mod credit_proof;
 pub mod dispute;
 pub mod ika_policy;
@@ -8,6 +9,7 @@ pub mod loan;
 pub mod repayment_stream;
 pub mod reputation;
 
+pub use collateral_escrow::*;
 pub use credit_proof::*;
 pub use dispute::*;
 pub use ika_policy::*;
@@ -27,6 +29,7 @@ mod tests {
     fn account_space_constants_include_discriminator() {
         assert_eq!(LendingPool::LEN, 153);
         assert_eq!(Loan::LEN, 171);
+        assert_eq!(CollateralEscrow::LEN, 148);
         assert_eq!(CreditProof::LEN, 98);
         assert_eq!(Dispute::LEN, 291);
         assert_eq!(Arbitrator::LEN, 54);
