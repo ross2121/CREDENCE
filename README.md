@@ -88,3 +88,5 @@ All side track submissions also due by May 11.
 ## Implementation Status
 
 Anchor contract implementation is available in this repo with demo defaults for hackathon flows. Production-style builds disable mock protocol paths and are tracked in [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md).
+
+Devnet deployment and demo commands are tracked in [docs/DEVNET_RUNBOOK.md](docs/DEVNET_RUNBOOK.md).

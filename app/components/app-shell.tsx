@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Landmark, ShieldCheck, Wallet } from "lucide-react";
+import { BarChart3, Landmark, Settings2, ShieldCheck, Wallet } from "lucide-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { PrivyAuthButton } from "@/components/privy-auth-button";
 const nav = [
   { href: "/borrow", label: "Borrow", icon: ShieldCheck },
   { href: "/lend", label: "Lend", icon: Landmark },
+  { href: "/admin", label: "Admin", icon: Settings2 },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
