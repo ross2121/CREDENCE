@@ -4,18 +4,18 @@ import { create } from "zustand";
 
 type AxiomView = "borrow" | "lend" | "analytics";
 
-type DemoPool = {
+type PoolFallback = {
   totalDepositsUsdt: number;
   totalBorrowedUsdt: number;
   kaminoAllocationUsdt: number;
   poolApyBps: number;
 };
 
-type DemoCredit = {
-  tier: "Gold";
+type CreditFallback = {
+  tier: "Bronze";
   maxLoanUsdt: number;
   collateralRequiredBps: number;
-  proofStatus: "ready";
+  proofStatus: "not registered";
   score: number;
   modelHash: string;
   walletHash: string;
@@ -33,7 +33,7 @@ type ActiveLoan = {
   repaidUsdt: number;
   apyBps: number;
   dueDate: string;
-  status: "Streaming";
+  status: "None";
 };
 
 type RepaymentStream = {
@@ -41,14 +41,6 @@ type RepaymentStream = {
   accruedUsdt: number;
   nextClaimUsdt: number;
   healthBps: number;
-};
-
-type LenderPosition = {
-  walletUsdt: number;
-  suppliedUsdt: number;
-  earnedUsdt: number;
-  pendingTorque: number;
-  dailyEarningsUsdt: number;
 };
 
 type LenderAction = {
@@ -59,36 +51,18 @@ type YieldAllocation = {
   axiomPoolUsdt: number;
   kaminoUsdt: number;
   borrowerInterestApyBps: number;
-  kaminoApyBps: number;
-  blendedApyBps: number;
   lastRebalance: string;
-};
-
-type AnalyticsPoint = {
-  label: string;
-  value: number;
-};
-
-type AnalyticsState = {
-  utilizationHistory: AnalyticsPoint[];
-  creditTiers: AnalyticsPoint[];
-  repaymentSuccess: AnalyticsPoint[];
-  torqueRewards: AnalyticsPoint[];
-  activeLoans: number;
-  liquidationsAvoided: number;
 };
 
 type AxiomState = {
   activeView: AxiomView;
-  pool: DemoPool;
-  credit: DemoCredit;
+  pool: PoolFallback;
+  credit: CreditFallback;
   loanRequest: BorrowerLoanRequest;
   activeLoan: ActiveLoan;
   repaymentStream: RepaymentStream;
-  lenderPosition: LenderPosition;
   lenderAction: LenderAction;
   yieldAllocation: YieldAllocation;
-  analytics: AnalyticsState;
   setActiveView: (view: AxiomView) => void;
   updateLoanRequest: (request: Partial<BorrowerLoanRequest>) => void;
   updateLenderAction: (action: Partial<LenderAction>) => void;
@@ -97,20 +71,20 @@ type AxiomState = {
 export const useAxiomStore = create<AxiomState>((set) => ({
   activeView: "borrow",
   pool: {
-    totalDepositsUsdt: 128_000,
-    totalBorrowedUsdt: 84_500,
-    kaminoAllocationUsdt: 22_000,
-    poolApyBps: 970,
+    totalDepositsUsdt: 0,
+    totalBorrowedUsdt: 0,
+    kaminoAllocationUsdt: 0,
+    poolApyBps: 0,
   },
   credit: {
-    tier: "Gold",
-    maxLoanUsdt: 12_500,
-    collateralRequiredBps: 2_500,
-    proofStatus: "ready",
-    score: 742,
-    modelHash: "qvac-credit-v1:8f31",
-    walletHash: "wallet:4c9a...d12e",
-    expiresAt: "May 10, 2026",
+    tier: "Bronze",
+    maxLoanUsdt: 0,
+    collateralRequiredBps: 0,
+    proofStatus: "not registered",
+    score: 0,
+    modelHash: "Not registered",
+    walletHash: "Not registered",
+    expiresAt: "Not registered",
   },
   loanRequest: {
     principalUsdt: 100,
@@ -118,66 +92,26 @@ export const useAxiomStore = create<AxiomState>((set) => ({
     collateralUsdt: 25,
   },
   activeLoan: {
-    principalUsdt: 7_500,
-    repaidUsdt: 2_180,
-    apyBps: 1_180,
-    dueDate: "June 18, 2026",
-    status: "Streaming",
+    principalUsdt: 0,
+    repaidUsdt: 0,
+    apyBps: 0,
+    dueDate: "No active loan",
+    status: "None",
   },
   repaymentStream: {
-    fundedUsdt: 2_600,
-    accruedUsdt: 2_180,
-    nextClaimUsdt: 92,
-    healthBps: 11_900,
-  },
-  lenderPosition: {
-    walletUsdt: 18_400,
-    suppliedUsdt: 32_000,
-    earnedUsdt: 1_248,
-    pendingTorque: 420,
-    dailyEarningsUsdt: 8.47,
+    fundedUsdt: 0,
+    accruedUsdt: 0,
+    nextClaimUsdt: 0,
+    healthBps: 0,
   },
   lenderAction: {
-    amountUsdt: 2_500,
+    amountUsdt: 1,
   },
   yieldAllocation: {
-    axiomPoolUsdt: 106_000,
-    kaminoUsdt: 22_000,
-    borrowerInterestApyBps: 1_180,
-    kaminoApyBps: 760,
-    blendedApyBps: 970,
-    lastRebalance: "May 3, 2026 09:00",
-  },
-  analytics: {
-    utilizationHistory: [
-      { label: "Mon", value: 58 },
-      { label: "Tue", value: 61 },
-      { label: "Wed", value: 64 },
-      { label: "Thu", value: 63 },
-      { label: "Fri", value: 66 },
-      { label: "Sat", value: 68 },
-      { label: "Sun", value: 66 },
-    ],
-    creditTiers: [
-      { label: "Bronze", value: 18 },
-      { label: "Silver", value: 34 },
-      { label: "Gold", value: 41 },
-      { label: "Platinum", value: 7 },
-    ],
-    repaymentSuccess: [
-      { label: "Jan", value: 94 },
-      { label: "Feb", value: 95 },
-      { label: "Mar", value: 96 },
-      { label: "Apr", value: 97 },
-      { label: "May", value: 97 },
-    ],
-    torqueRewards: [
-      { label: "Lender boost", value: 12_500 },
-      { label: "Referrals", value: 7_250 },
-      { label: "Repayers", value: 4_200 },
-    ],
-    activeLoans: 48,
-    liquidationsAvoided: 11,
+    axiomPoolUsdt: 0,
+    kaminoUsdt: 0,
+    borrowerInterestApyBps: 0,
+    lastRebalance: "Not rebalanced",
   },
   setActiveView: (activeView) => set({ activeView }),
   updateLoanRequest: (request) =>

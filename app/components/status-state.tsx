@@ -6,7 +6,8 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { DemoRequestState } from "@/lib/demo-api";
+
+export type RequestState = "loading" | "empty" | "error" | "success";
 
 const config = {
   loading: {
@@ -36,7 +37,7 @@ export function StatusState({
   title,
   message,
 }: {
-  state: DemoRequestState;
+  state: RequestState;
   title: string;
   message: string;
 }) {

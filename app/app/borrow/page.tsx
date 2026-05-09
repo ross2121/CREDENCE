@@ -77,15 +77,11 @@ export default function BorrowPage() {
   const {
     credit,
     loanRequest,
-    activeLoan,
-    repaymentStream,
     updateLoanRequest,
   } = useAxiomStore(
     useShallow((state) => ({
       credit: state.credit,
       loanRequest: state.loanRequest,
-      activeLoan: state.activeLoan,
-      repaymentStream: state.repaymentStream,
       updateLoanRequest: state.updateLoanRequest,
     }))
   );
@@ -100,38 +96,38 @@ export default function BorrowPage() {
     (loanRequest.principalUsdt * effectiveTierConfig.collateralBps) / 10_000
   );
   const displayedCredit = {
-    tier: liveProof?.tier ?? credit.tier,
-    maxLoanUsdt: liveProof?.maxLoanUsdc ?? effectiveTierConfig.maxLoanUsdt,
-    collateralRequiredBps: effectiveTierConfig.collateralBps,
+    tier: liveProof?.tier ?? "Unregistered",
+    maxLoanUsdt: liveProof?.maxLoanUsdc ?? 0,
+    collateralRequiredBps: liveProof ? effectiveTierConfig.collateralBps : 0,
     proofStatus: liveProof ? "registered" : credit.proofStatus,
-    score: credit.score,
-    modelHash: credit.modelHash,
-    walletHash: credit.walletHash,
+    score: liveProof ? credit.score : null,
+    modelHash: liveProof ? credit.modelHash : "Not registered",
+    walletHash: liveProof ? credit.walletHash : "Not registered",
     expiresAt: liveProof?.expiresAt ?? credit.expiresAt,
   };
   const displayedLoan = {
-    principalUsdt: liveLoan?.principalUsdc ?? activeLoan.principalUsdt,
-    repaidUsdt: liveLoan?.repaidUsdc ?? activeLoan.repaidUsdt,
-    apyBps: liveLoan?.interestBps ?? effectiveTierConfig.interestBps,
-    dueDate: liveLoan?.dueDate ?? activeLoan.dueDate,
-    status: liveLoan?.status ?? activeLoan.status,
+    principalUsdt: liveLoan?.principalUsdc ?? 0,
+    repaidUsdt: liveLoan?.repaidUsdc ?? 0,
+    apyBps: liveLoan?.interestBps ?? 0,
+    dueDate: liveLoan?.dueDate ?? "No active loan",
+    status: liveLoan?.status ?? "None",
     disbursed: liveLoan?.disbursed ?? false,
-    collateralUsdc: liveLoan?.collateralUsdc ?? derivedCollateralUsdt,
+    collateralUsdc: liveLoan?.collateralUsdc ?? 0,
     outstandingPrincipalUsdt:
       liveLoan?.outstandingPrincipalUsdc ??
-      Math.max(activeLoan.principalUsdt - activeLoan.repaidUsdt, 0),
+      0,
   };
   const displayedStream = {
-    healthBps: liveStream?.healthBps ?? repaymentStream.healthBps,
-    accruedUsdc: liveStream?.accruedUsdc ?? repaymentStream.accruedUsdt,
-    claimableUsdc: liveStream?.claimableUsdc ?? repaymentStream.nextClaimUsdt,
-    fundedUsdc: liveStream?.fundedUsdc ?? repaymentStream.fundedUsdt,
+    healthBps: liveStream?.healthBps ?? 0,
+    accruedUsdc: liveStream?.accruedUsdc ?? 0,
+    claimableUsdc: liveStream?.claimableUsdc ?? 0,
+    fundedUsdc: liveStream?.fundedUsdc ?? 0,
     totalDueUsdc:
       liveStream?.totalDueUsdc ??
-      Math.max(displayedLoan.principalUsdt, repaymentStream.fundedUsdt),
+      0,
     availableVaultUsdc:
       liveStream?.availableVaultUsdc ??
-      Math.max(repaymentStream.fundedUsdt - repaymentStream.accruedUsdt, 0),
+      0,
     streamVault: liveStream?.streamVault ?? "Not initialized",
     endDate: liveStream?.endDate ?? displayedLoan.dueDate,
     canClose: liveStream?.canClose ?? false,
@@ -343,7 +339,11 @@ export default function BorrowPage() {
             <Metric
               label="Credit tier"
               value={displayedCredit.tier}
-              detail={`${displayedCredit.score} local score`}
+              detail={
+                displayedCredit.score
+                  ? `${displayedCredit.score} local score`
+                  : "Register a QVAC-backed proof"
+              }
             />
             <Metric
               label="Max loan"

@@ -25,8 +25,8 @@ export default function AdminPage() {
   const livePool = useLivePool();
   const [loanAddress, setLoanAddress] = useState("");
   const [borrowerAddress, setBorrowerAddress] = useState("");
-  const [collateralValueUsdc, setCollateralValueUsdc] = useState(0.05);
-  const [loanValueUsdc, setLoanValueUsdc] = useState(0.1);
+  const [collateralValueUsdc, setCollateralValueUsdc] = useState(0);
+  const [loanValueUsdc, setLoanValueUsdc] = useState(0);
   const [actionState, setActionState] = useState<{
     status: "idle" | "loading" | "success" | "error";
     message: string;

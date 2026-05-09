@@ -74,16 +74,16 @@ export default function Home() {
           <div className="grid gap-3">
             <div className="flex items-center justify-between rounded-md bg-secondary p-4">
               <div>
-                <p className="text-sm text-muted-foreground">Credit tier</p>
-                <p className="mt-1 text-2xl font-semibold">Silver</p>
+                <p className="text-sm text-muted-foreground">Borrower signal</p>
+                <p className="mt-1 text-2xl font-semibold">Private tier proof</p>
               </div>
               <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Signal label="Max loan" value="$2,000" />
-              <Signal label="Collateral" value="50%" />
-              <Signal label="Pool liquidity" value="$6.8" />
-              <Signal label="Repayment funded" value="$10.10" />
+              <Signal label="Credit model" value="QVAC local" />
+              <Signal label="Borrowing" value="Proof gated" />
+              <Signal label="Collateral" value="Escrowed" />
+              <Signal label="Repayment" value="Streamed" />
             </div>
             <div className="rounded-md border border-border p-4">
               <div className="mb-3 flex items-center justify-between text-sm">

@@ -2,48 +2,26 @@
 
 import {
   Activity,
-  BadgeDollarSign,
   CircleDollarSign,
-  Gift,
+  DatabaseZap,
   PieChart,
   ShieldCheck,
-  TrendingUp,
 } from "lucide-react";
-import { useShallow } from "zustand/react/shallow";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
 import { StatusState } from "@/components/status-state";
 import { useLivePool } from "@/hooks/use-live-pool";
-import { demoApi } from "@/lib/demo-api";
-import { useAxiomStore } from "@/store/use-axiom-store";
 
 export default function AnalyticsPage() {
-  const { pool, analytics, lenderPosition } = useAxiomStore(
-    useShallow((state) => ({
-      pool: state.pool,
-      analytics: state.analytics,
-      lenderPosition: state.lenderPosition,
-    }))
-  );
   const livePool = useLivePool();
   const live = livePool.data;
-  const totalDeposits = live?.totalDepositsUsdc ?? pool.totalDepositsUsdt;
-  const totalBorrowed = live?.totalBorrowedUsdc ?? pool.totalBorrowedUsdt;
-  const kaminoAllocation =
-    live?.kaminoAllocatedUsdc ?? pool.kaminoAllocationUsdt;
-  const utilization = live
-    ? Math.round(live.utilizationBps / 100)
-    : Math.round((pool.totalBorrowedUsdt / pool.totalDepositsUsdt) * 100);
   const poolStatus = livePool.loading
     ? "loading"
     : livePool.error
-    ? "error"
-    : "success";
-  const totalTorque = analytics.torqueRewards.reduce(
-    (sum, point) => sum + point.value,
-    0
-  );
+      ? "error"
+      : "success";
+  const utilization = live ? Math.round(live.utilizationBps / 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -53,39 +31,48 @@ export default function AnalyticsPage() {
           Protocol health
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Monitor pool utilization, credit distribution, repayment quality, and
-          Torque campaign rewards from the same operating surface.
+          Live pool analytics read directly from AXIOM devnet accounts. Off-chain
+          distribution, rewards, and historical charts stay hidden until their
+          indexers are connected.
         </p>
       </section>
 
       <section className="grid gap-4 md:grid-cols-4">
         <Metric
           label="Total deposits"
-          value={`$${totalDeposits.toLocaleString()}`}
+          value={`$${(live?.totalDepositsUsdc ?? 0).toLocaleString()}`}
+          detail={live ? "Devnet pool" : "Not loaded"}
         />
         <Metric
           label="Total borrowed"
-          value={`$${totalBorrowed.toLocaleString()}`}
+          value={`$${(live?.totalBorrowedUsdc ?? 0).toLocaleString()}`}
+          detail={live ? "Devnet pool" : "Not loaded"}
         />
-        <Metric label="Utilization" value={`${utilization}%`} />
+        <Metric
+          label="Utilization"
+          value={`${utilization}%`}
+          detail={live ? "Devnet pool" : "Not loaded"}
+        />
         <Metric
           label="Kamino allocation"
-          value={`$${kaminoAllocation.toLocaleString()}`}
+          value={`$${(live?.kaminoAllocatedUsdc ?? 0).toLocaleString()}`}
+          detail={live ? "Configured vault" : "Not loaded"}
         />
       </section>
+
       <section className="grid gap-4 md:grid-cols-2">
         <StatusState
           message={
             livePool.error ??
-            "Protocol capital totals are loaded from AXIOM devnet accounts."
+            "Pool totals, utilization, USDC vault, and Kamino share account are loaded from devnet."
           }
           state={poolStatus}
           title="Devnet analytics"
         />
         <StatusState
-          message={demoApi.borrower.message}
-          state={demoApi.borrower.state}
-          title="QuickNode listener"
+          message="Historical borrower cohorts and rewards require a deployed indexer. No synthetic chart data is shown."
+          state="empty"
+          title="Off-chain indexers"
         />
       </section>
 
@@ -93,26 +80,27 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Pool utilization
+              <PieChart className="h-4 w-4" />
+              Live allocation
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex h-48 items-end gap-3">
-              {analytics.utilizationHistory.map((point) => (
-                <div
-                  key={point.label}
-                  className="flex h-full flex-1 flex-col justify-end gap-2"
-                >
-                  <div
-                    className="rounded-sm bg-primary"
-                    style={{ height: `${point.value}%` }}
-                  />
-                  <div className="text-center text-xs text-muted-foreground">
-                    {point.label}
-                  </div>
-                </div>
-              ))}
+          <CardContent className="space-y-5">
+            <ProgressRow label="Borrowed" value={utilization} />
+            <ProgressRow
+              label="Kamino allocation"
+              value={live ? Math.round(live.kaminoAllocationBps / 100) : 0}
+            />
+            <div className="grid gap-3 md:grid-cols-2">
+              <InfoPanel
+                icon={<CircleDollarSign className="h-5 w-5" />}
+                label="Liquid vault"
+                value={`$${(live?.liquidVaultUsdc ?? 0).toLocaleString()}`}
+              />
+              <InfoPanel
+                icon={<Activity className="h-5 w-5" />}
+                label="Base interest"
+                value={`${((live?.baseInterestBps ?? 0) / 100).toFixed(2)}%`}
+              />
             </div>
           </CardContent>
         </Card>
@@ -120,90 +108,26 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BadgeDollarSign className="h-4 w-4" />
-              Capital totals
+              <DatabaseZap className="h-4 w-4" />
+              Connected data
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
+            <InfoPanel
+              icon={<ShieldCheck className="h-5 w-5" />}
+              label="Pool account"
+              value={live?.lendingPool ?? "Not loaded"}
+            />
             <InfoPanel
               icon={<CircleDollarSign className="h-5 w-5" />}
-              label="Idle in Kamino"
-              value={`$${kaminoAllocation.toLocaleString()}`}
+              label="USDC vault"
+              value={live?.usdcVault ?? "Not loaded"}
             />
             <InfoPanel
               icon={<Activity className="h-5 w-5" />}
-              label="Active loans"
-              value={analytics.activeLoans.toLocaleString()}
+              label="Last rebalance"
+              value={live?.lastRebalance ?? "Not rebalanced"}
             />
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PieChart className="h-4 w-4" />
-              Credit tier distribution
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {analytics.creditTiers.map((point) => (
-              <ProgressRow
-                key={point.label}
-                label={point.label}
-                value={point.value}
-                suffix="%"
-              />
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4" />
-              Repayment success
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {analytics.repaymentSuccess.map((point) => (
-              <ProgressRow
-                key={point.label}
-                label={point.label}
-                value={point.value}
-                suffix="%"
-              />
-            ))}
-            <p className="pt-2 text-sm text-muted-foreground">
-              {analytics.liquidationsAvoided} liquidation warnings resolved by
-              borrower agents.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Gift className="h-4 w-4" />
-              Torque rewards
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {analytics.torqueRewards.map((point) => (
-              <ProgressRow
-                key={point.label}
-                label={point.label}
-                max={totalTorque}
-                value={point.value}
-              />
-            ))}
-            <div className="rounded-md border border-border p-4">
-              <p className="text-sm text-muted-foreground">Claimable now</p>
-              <p className="mt-1 text-xl font-semibold">
-                {lenderPosition.pendingTorque.toLocaleString()} TORQ
-              </p>
-            </div>
           </CardContent>
         </Card>
       </section>
@@ -211,32 +135,17 @@ export default function AnalyticsPage() {
   );
 }
 
-function ProgressRow({
-  label,
-  value,
-  max = 100,
-  suffix = "",
-}: {
-  label: string;
-  value: number;
-  max?: number;
-  suffix?: string;
-}) {
-  const width = Math.min((value / max) * 100, 100);
-
+function ProgressRow({ label, value }: { label: string; value: number }) {
   return (
     <div>
       <div className="mb-1 flex justify-between text-sm">
         <span>{label}</span>
-        <span>
-          {value.toLocaleString()}
-          {suffix}
-        </span>
+        <span>{value}%</span>
       </div>
       <div className="h-2 rounded-sm bg-muted">
         <div
           className="h-2 rounded-sm bg-primary"
-          style={{ width: `${width}%` }}
+          style={{ width: `${Math.min(value, 100)}%` }}
         />
       </div>
     </div>
@@ -256,7 +165,7 @@ function InfoPanel({
     <div className="rounded-md border border-border p-4">
       <div className="text-primary">{icon}</div>
       <p className="mt-3 text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
+      <p className="mt-1 break-words text-base font-semibold">{value}</p>
     </div>
   );
 }
