@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, Landmark, Settings2, ShieldCheck, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PrivyAuthButton } from "@/components/privy-auth-button";
 import { SolanaWalletButton } from "@/components/solana-wallet-button";
 
 const nav = [
@@ -53,7 +52,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 );
               })}
             </nav>
-            {process.env.NEXT_PUBLIC_PRIVY_APP_ID ? <PrivyAuthButton /> : null}
             <SolanaWalletButton />
           </div>
         </div>
