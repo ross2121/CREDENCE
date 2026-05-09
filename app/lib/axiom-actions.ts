@@ -194,6 +194,14 @@ async function sendAndConfirm(
     await connection.getLatestBlockhash("confirmed")
   ).blockhash;
 
+  const simulation = await connection.simulateTransaction(transaction);
+  if (simulation.value.err) {
+    const logs = simulation.value.logs?.join("\n") ?? "No simulation logs";
+    throw new Error(
+      `Simulation failed: ${JSON.stringify(simulation.value.err)}\n${logs}`
+    );
+  }
+
   const signature = await wallet.sendTransaction(transaction, connection);
   const latestBlockhash = await connection.getLatestBlockhash("confirmed");
   await connection.confirmTransaction(
