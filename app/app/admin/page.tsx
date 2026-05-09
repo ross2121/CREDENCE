@@ -3,13 +3,14 @@
 import { Activity, CircleDollarSign, Clock3, ShieldCheck } from "lucide-react";
 import { PublicKey } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
 import { StatusState } from "@/components/status-state";
+import { SolanaWalletButton } from "@/components/solana-wallet-button";
+import { useToast } from "@/components/toast-provider";
 import { useLivePool } from "@/hooks/use-live-pool";
 import {
   executeLiquidationFromWallet,
@@ -20,6 +21,7 @@ import { AXIOM_DEVNET } from "@/lib/devnet-pool";
 export default function AdminPage() {
   const wallet = useWallet();
   const { connection } = useConnection();
+  const { showTransactionToast } = useToast();
   const livePool = useLivePool();
   const [loanAddress, setLoanAddress] = useState("");
   const [borrowerAddress, setBorrowerAddress] = useState("");
@@ -76,6 +78,7 @@ export default function AdminPage() {
         status: "success",
         message: `Confirmed ${signature.slice(0, 8)}...${signature.slice(-8)}`,
       });
+      showTransactionToast(signature);
     } catch (caught) {
       setActionState({
         status: "error",
@@ -107,7 +110,7 @@ export default function AdminPage() {
               label="Connected"
               value={isPoolAuthority ? "Authority" : "Restricted"}
             />
-            <WalletMultiButton />
+            <SolanaWalletButton />
           </CardContent>
         </Card>
       </section>

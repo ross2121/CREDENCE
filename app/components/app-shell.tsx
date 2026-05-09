@@ -3,13 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, Landmark, Settings2, ShieldCheck, Wallet } from "lucide-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useAxiomStore } from "@/store/use-axiom-store";
-import { demoSeed } from "@/lib/demo-api";
 import { PrivyAuthButton } from "@/components/privy-auth-button";
+import { SolanaWalletButton } from "@/components/solana-wallet-button";
 
 const nav = [
   { href: "/borrow", label: "Borrow", icon: ShieldCheck },
@@ -20,7 +16,6 @@ const nav = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { demoMode, toggleDemoMode } = useAxiomStore();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -36,7 +31,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 Sovereign AI credit and yield
               </p>
             </div>
-            {demoMode ? <Badge>Demo</Badge> : null}
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <nav className="flex rounded-md border border-border bg-background p-1">
@@ -59,20 +53,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 );
               })}
             </nav>
-            <Button variant="outline" onClick={toggleDemoMode}>
-              {demoMode ? "Live mode" : "Demo mode"}
-            </Button>
             {process.env.NEXT_PUBLIC_PRIVY_APP_ID ? <PrivyAuthButton /> : null}
-            <WalletMultiButton />
+            <SolanaWalletButton />
           </div>
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6 lg:px-6">{children}</main>
-      {demoMode ? (
-        <footer className="mx-auto max-w-7xl px-4 pb-6 text-xs text-muted-foreground lg:px-6">
-          Deterministic demo seed: {demoSeed}
-        </footer>
-      ) : null}
     </div>
   );
 }

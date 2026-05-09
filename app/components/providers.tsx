@@ -8,6 +8,7 @@ import {
 } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
+import { ToastProvider } from "@/components/toast-provider";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 const defaultRpc = "https://api.devnet.solana.com";
@@ -25,7 +26,7 @@ export function Providers({ children }: { children: ReactNode }) {
     </ConnectionProvider>
   );
 
-  if (!privyAppId) return walletTree;
+  if (!privyAppId) return <ToastProvider>{walletTree}</ToastProvider>;
 
   return (
     <PrivyProvider
@@ -47,7 +48,7 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }}
     >
-      {walletTree}
+      <ToastProvider>{walletTree}</ToastProvider>
     </PrivyProvider>
   );
 }

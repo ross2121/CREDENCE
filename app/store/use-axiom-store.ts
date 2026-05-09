@@ -80,7 +80,6 @@ type AnalyticsState = {
 
 type AxiomState = {
   activeView: AxiomView;
-  demoMode: boolean;
   pool: DemoPool;
   credit: DemoCredit;
   loanRequest: BorrowerLoanRequest;
@@ -91,14 +90,12 @@ type AxiomState = {
   yieldAllocation: YieldAllocation;
   analytics: AnalyticsState;
   setActiveView: (view: AxiomView) => void;
-  toggleDemoMode: () => void;
   updateLoanRequest: (request: Partial<BorrowerLoanRequest>) => void;
   updateLenderAction: (action: Partial<LenderAction>) => void;
 };
 
 export const useAxiomStore = create<AxiomState>((set) => ({
   activeView: "borrow",
-  demoMode: process.env.NEXT_PUBLIC_AXIOM_DEMO_MODE !== "false",
   pool: {
     totalDepositsUsdt: 128_000,
     totalBorrowedUsdt: 84_500,
@@ -116,9 +113,9 @@ export const useAxiomStore = create<AxiomState>((set) => ({
     expiresAt: "May 10, 2026",
   },
   loanRequest: {
-    principalUsdt: 7_500,
+    principalUsdt: 100,
     durationDays: 60,
-    collateralUsdt: 1_875,
+    collateralUsdt: 25,
   },
   activeLoan: {
     principalUsdt: 7_500,
@@ -183,7 +180,6 @@ export const useAxiomStore = create<AxiomState>((set) => ({
     liquidationsAvoided: 11,
   },
   setActiveView: (activeView) => set({ activeView }),
-  toggleDemoMode: () => set((state) => ({ demoMode: !state.demoMode })),
   updateLoanRequest: (request) =>
     set((state) => {
       const next = { ...state.loanRequest, ...request };

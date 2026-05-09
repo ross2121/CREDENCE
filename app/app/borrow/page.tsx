@@ -14,13 +14,14 @@ import {
 } from "lucide-react";
 import { PublicKey } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PrivyRepaymentPanel } from "@/components/privy-repayment-panel";
+import { SolanaWalletButton } from "@/components/solana-wallet-button";
+import { useToast } from "@/components/toast-provider";
 import { Metric } from "@/components/metric";
 import { StatusState } from "@/components/status-state";
 import { useBorrowerState } from "@/hooks/use-borrower-state";
@@ -55,6 +56,7 @@ const tierConfig = {
 export default function BorrowPage() {
   const wallet = useWallet();
   const { connection } = useConnection();
+  const { showTransactionToast } = useToast();
   const { connected, publicKey } = wallet;
   const [actionState, setActionState] = useState<{
     status: "idle" | "loading" | "success" | "error";
@@ -313,6 +315,7 @@ export default function BorrowPage() {
         status: "success",
         message: `Confirmed ${signature.slice(0, 8)}...${signature.slice(-8)}`,
       });
+      showTransactionToast(signature);
     } catch (caught) {
       setActionState({
         status: "error",
@@ -381,7 +384,7 @@ export default function BorrowPage() {
                 </p>
               </div>
             </div>
-            <WalletMultiButton />
+            <SolanaWalletButton />
           </CardContent>
         </Card>
       </section>

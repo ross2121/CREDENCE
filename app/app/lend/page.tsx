@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
 import { StatusState } from "@/components/status-state";
+import { useToast } from "@/components/toast-provider";
 import { useLivePool } from "@/hooks/use-live-pool";
 import {
   depositLiquidityFromWallet,
@@ -36,6 +37,7 @@ const apyRows = [
 export default function LendPage() {
   const wallet = useWallet();
   const { connection } = useConnection();
+  const { showTransactionToast } = useToast();
   const [actionState, setActionState] = useState<{
     status: "idle" | "loading" | "success" | "error";
     message: string;
@@ -123,6 +125,7 @@ export default function LendPage() {
         status: "success",
         message: `Confirmed ${signature.slice(0, 8)}...${signature.slice(-8)}`,
       });
+      showTransactionToast(signature);
     } catch (caught) {
       setActionState({
         status: "error",
@@ -178,7 +181,7 @@ export default function LendPage() {
         <Metric
           label="Base rate"
           value={`${(displayPool.baseInterestBps / 100).toFixed(2)}%`}
-          detail={live ? "Read from devnet pool" : "Demo fallback"}
+          detail={live ? "Read from devnet pool" : "Waiting for devnet pool"}
         />
       </section>
       <section className="grid gap-4 md:grid-cols-2">

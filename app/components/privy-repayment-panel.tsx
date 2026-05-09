@@ -8,6 +8,7 @@ import type { WalletContextState } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/components/toast-provider";
 import { useBorrowerPolicy } from "@/hooks/use-borrower-policy";
 import {
   buildFundRepaymentStreamWithPolicyTransaction,
@@ -42,6 +43,7 @@ export function PrivyRepaymentPanel({
   const { authenticated, login, ready } = usePrivy();
   const { wallets, createWallet, ready: walletsReady } = useSolanaWallets();
   const { sendTransaction } = useSendTransaction();
+  const { showTransactionToast } = useToast();
   const delegatedWalletAddress = wallets[0]?.address ?? null;
   const delegatedWallet = useMemo(
     () => (delegatedWalletAddress ? new PublicKey(delegatedWalletAddress) : null),
@@ -85,6 +87,7 @@ export function PrivyRepaymentPanel({
         "success",
         `Confirmed ${signature.slice(0, 8)}...${signature.slice(-8)}`
       );
+      showTransactionToast(signature);
     } catch (caught) {
       onActionState(
         "error",
@@ -126,6 +129,7 @@ export function PrivyRepaymentPanel({
         "success",
         `Confirmed ${receipt.signature.slice(0, 8)}...${receipt.signature.slice(-8)}`
       );
+      showTransactionToast(receipt.signature);
     } catch (caught) {
       onActionState(
         "error",
