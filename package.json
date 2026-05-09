@@ -37,6 +37,7 @@
     "api:build": "npm --prefix api run build",
     "api:typecheck": "npm --prefix api run typecheck",
     "qvac:smoke": "npx ts-node scripts/qvac-smoke.ts",
+    "qvac:verify-agents": "npx ts-node scripts/qvac-agent-verify.ts",
     "qvac:serve": "npx qvac serve openai --config qvac.config.json --port 11434",
     "kamino:devnet:vaults": "npx ts-node scripts/kamino-devnet-vaults.ts",
     "zk:compile": "mkdir -p build/zk && circom circuits/credit_score.circom --r1cs --wasm --sym -o build/zk -l node_modules",
