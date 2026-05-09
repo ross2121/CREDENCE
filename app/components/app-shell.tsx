@@ -2,11 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Landmark, Settings2, ShieldCheck, Wallet } from "lucide-react";
+import {
+  BarChart3,
+  Home,
+  Landmark,
+  Settings2,
+  ShieldCheck,
+  Wallet,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SolanaWalletButton } from "@/components/solana-wallet-button";
 
 const nav = [
+  { href: "/", label: "Home", icon: Home },
   { href: "/borrow", label: "Borrow", icon: ShieldCheck },
   { href: "/lend", label: "Lend", icon: Landmark },
   { href: "/admin", label: "Admin", icon: Settings2 },
@@ -25,7 +33,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Wallet className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-lg font-semibold leading-tight">AXIOM</p>
+              <p className="text-lg font-semibold leading-tight">Credence</p>
               <p className="text-xs text-muted-foreground">
                 Sovereign AI credit and yield
               </p>

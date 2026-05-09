@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, ReactNode, useContext, useMemo, useState } from "react";
-import { CheckCircle2, ExternalLink, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, ExternalLink, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type Toast = {
@@ -9,10 +9,12 @@ type Toast = {
   title: string;
   message: string;
   href?: string;
+  variant?: "success" | "error";
 };
 
 type ToastContextValue = {
   showToast: (toast: Omit<Toast, "id">) => void;
+  showErrorToast: (message: string, title?: string) => void;
   showTransactionToast: (signature: string, title?: string) => void;
 };
 
@@ -30,6 +32,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           setToasts((current) => current.filter((item) => item.id !== id));
         }, 9000);
       },
+      showErrorToast: (message, title = "Transaction failed") => {
+        const id = Date.now();
+        setToasts((current) => [
+          ...current,
+          { id, title, message, variant: "error" },
+        ]);
+        window.setTimeout(() => {
+          setToasts((current) => current.filter((item) => item.id !== id));
+        }, 12000);
+      },
       showTransactionToast: (signature, title = "Transaction confirmed") => {
         const shortSignature = `${signature.slice(0, 8)}...${signature.slice(-8)}`;
         const href = `https://explorer.solana.com/tx/${signature}?cluster=devnet`;
@@ -41,6 +53,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             title,
             message: shortSignature,
             href,
+            variant: "success",
           },
         ]);
         window.setTimeout(() => {
@@ -61,7 +74,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             className="rounded-md border border-border bg-card p-4 text-card-foreground shadow-lg"
           >
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-primary" />
+              {toast.variant === "error" ? (
+                <AlertCircle className="mt-0.5 h-5 w-5 flex-none text-destructive" />
+              ) : (
+                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-none text-primary" />
+              )}
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{toast.title}</p>
                 <p className="mt-1 break-all text-sm text-muted-foreground">

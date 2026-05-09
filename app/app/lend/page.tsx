@@ -34,10 +34,26 @@ const apyRows = [
   { label: "Blended lender APY", key: "blended" },
 ];
 
+function readableError(caught: unknown) {
+  const message = caught instanceof Error ? caught.message : "Transaction failed";
+  const anchorMessage = message.match(/Error Message: ([^\n.]+(?:\.[^\n.]*)?)/);
+  if (anchorMessage?.[1]) return anchorMessage[1].trim();
+
+  if (message.includes("InsufficientVaultBalance")) {
+    return "Vault balance is lower than the requested withdrawal amount.";
+  }
+
+  if (message.includes("User rejected")) {
+    return "User rejected the wallet request.";
+  }
+
+  return message.split("\n")[0] ?? "Transaction failed";
+}
+
 export default function LendPage() {
   const wallet = useWallet();
   const { connection } = useConnection();
-  const { showTransactionToast } = useToast();
+  const { showErrorToast, showTransactionToast } = useToast();
   const [actionState, setActionState] = useState<{
     status: "idle" | "loading" | "success" | "error";
     message: string;
@@ -90,6 +106,13 @@ export default function LendPage() {
     !!live?.authority && wallet.publicKey?.toBase58() === live.authority;
 
   async function runAction(action: "deposit" | "withdraw" | "rebalance") {
+    if (action === "withdraw" && live && lenderAction.amountUsdt > live.liquidVaultUsdc) {
+      const message = `Only $${live.liquidVaultUsdc.toLocaleString()} is liquid in the AXIOM vault right now. Withdraw a smaller amount.`;
+      setActionState({ status: "error", message });
+      showErrorToast(message, "Withdrawal unavailable");
+      return;
+    }
+
     setActionState({
       status: "loading",
       message: {
@@ -127,11 +150,12 @@ export default function LendPage() {
       });
       showTransactionToast(signature);
     } catch (caught) {
+      const message = readableError(caught);
       setActionState({
         status: "error",
-        message:
-          caught instanceof Error ? caught.message : "Transaction failed",
+        message,
       });
+      showErrorToast(message);
     }
   }
 
