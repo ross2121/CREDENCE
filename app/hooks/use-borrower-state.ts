@@ -19,6 +19,7 @@ export function useBorrowerState(wallet: PublicKey | null) {
 
     setLoading(true);
     setError(null);
+    setData(null);
     try {
       setData(await fetchBorrowerState(wallet));
     } catch (caught) {

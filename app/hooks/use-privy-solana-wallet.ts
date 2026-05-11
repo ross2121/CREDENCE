@@ -57,20 +57,19 @@ export function usePrivySolanaWallet(): AxiomWallet {
           throw new Error("Connect Privy wallet first");
         }
 
-        if (standardWallet) {
-          const result = await signAndSendTransaction({
-            transaction: transaction.serialize({
-              requireAllSignatures: false,
-              verifySignatures: false,
-            }),
-            wallet: standardWallet,
-            chain: "solana:devnet",
-          });
-          return bs58.encode(result.signature);
+        if (embeddedWallet && embeddedWallet.address === address) {
+          return embeddedWallet.sendTransaction(transaction, connection);
         }
 
-        if (!embeddedWallet) throw new Error("Connect Privy wallet first");
-        return embeddedWallet.sendTransaction(transaction, connection);
+        const result = await signAndSendTransaction({
+          transaction: transaction.serialize({
+            requireAllSignatures: false,
+            verifySignatures: false,
+          }),
+          wallet: standardWallet,
+          chain: "solana:devnet",
+        });
+        return bs58.encode(result.signature);
       },
     }),
     [

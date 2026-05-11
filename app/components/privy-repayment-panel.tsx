@@ -237,10 +237,16 @@ export function PrivyRepaymentPanel({
             <KeyRound className="mt-1 h-4 w-4 text-primary" />
             <div className="space-y-1 text-sm">
               <p className="font-medium">
-                {authenticated ? "Privy authenticated" : "Privy login required"}
+                {authenticated
+                  ? "Borrower wallet authenticated"
+                  : "Borrower wallet login required"}
               </p>
               <p className="break-all text-muted-foreground">
-                {delegatedWalletAddress ?? "No embedded Solana wallet yet"}
+                {ownerWallet?.toBase58() ?? "No borrower wallet connected"}
+              </p>
+              <p className="pt-2 font-medium">Delegated agent wallet</p>
+              <p className="break-all text-muted-foreground">
+                {delegatedWalletAddress ?? "No delegated agent wallet yet"}
               </p>
             </div>
           </div>
@@ -265,9 +271,9 @@ export function PrivyRepaymentPanel({
             <div className="rounded-md border border-border p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 gap-3">
-                  <Wallet className="mt-1 h-4 w-4 flex-none text-primary" />
-                  <div className="min-w-0">
-                    <p className="font-medium">Fund this agent wallet</p>
+                    <Wallet className="mt-1 h-4 w-4 flex-none text-primary" />
+                    <div className="min-w-0">
+                    <p className="font-medium">Fund delegated agent wallet</p>
                     <p className="mt-1 break-all text-sm text-muted-foreground">
                       {delegatedWalletAddress}
                     </p>

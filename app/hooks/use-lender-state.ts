@@ -19,6 +19,7 @@ export function useLenderState(wallet: PublicKey | null) {
 
     setLoading(true);
     setError(null);
+    setData(null);
     try {
       setData(await fetchLenderState(wallet));
     } catch (caught) {

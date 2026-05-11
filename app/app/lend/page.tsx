@@ -192,11 +192,11 @@ export default function LendPage() {
 
       <section className="grid gap-4 md:grid-cols-4">
         <Metric
-          label="Deposits"
+          label="Pool deposits"
           value={`$${displayPool.totalDeposits.toLocaleString()}`}
         />
         <Metric
-          label="Borrowed"
+          label="Pool borrowed"
           value={`$${displayPool.totalBorrowed.toLocaleString()}`}
         />
         <Metric label="Utilization" value={`${utilization}%`} />
