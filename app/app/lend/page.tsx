@@ -8,7 +8,7 @@ import {
   RefreshCw,
   Wallet,
 } from "lucide-react";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useConnection } from "@solana/wallet-adapter-react";
 import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import { StatusState } from "@/components/status-state";
 import { useLenderState } from "@/hooks/use-lender-state";
 import { useToast } from "@/components/toast-provider";
 import { useLivePool } from "@/hooks/use-live-pool";
+import { usePrivySolanaWallet } from "@/hooks/use-privy-solana-wallet";
 import {
   depositLiquidityFromWallet,
   rebalanceToKaminoFromWallet,
@@ -43,7 +44,7 @@ function readableError(caught: unknown) {
 }
 
 export default function LendPage() {
-  const wallet = useWallet();
+  const wallet = usePrivySolanaWallet();
   const { connection } = useConnection();
   const { showErrorToast, showTransactionToast } = useToast();
   const [actionState, setActionState] = useState<{

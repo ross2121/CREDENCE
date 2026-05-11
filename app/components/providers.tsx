@@ -2,35 +2,40 @@
 
 import { ReactNode, useMemo } from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
-import {
-  ConnectionProvider,
-  WalletProvider,
-} from "@solana/wallet-adapter-react";
-import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
-import { PrivyWalletSync } from "@/components/privy-wallet-sync";
+import { ConnectionProvider } from "@solana/wallet-adapter-react";
 import { ToastProvider } from "@/components/toast-provider";
-import "@solana/wallet-adapter-react-ui/styles.css";
 
 const defaultRpc = "https://api.devnet.solana.com";
 
 export function Providers({ children }: { children: ReactNode }) {
   const endpoint = process.env.NEXT_PUBLIC_RPC_URL ?? defaultRpc;
   const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-  const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
+  const solanaClusters = useMemo(
+    () => [
+      {
+        name: "devnet" as const,
+        rpcUrl: endpoint,
+      },
+    ],
+    [endpoint]
+  );
 
-  const walletTree = (syncPrivy = false) => (
+  const walletTree = (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>
-          {syncPrivy ? <PrivyWalletSync /> : null}
-          {children}
-        </WalletModalProvider>
-      </WalletProvider>
+      {children}
     </ConnectionProvider>
   );
 
-  if (!privyAppId) return <ToastProvider>{walletTree()}</ToastProvider>;
+  if (!privyAppId) {
+    return (
+      <ToastProvider>
+        <div className="p-6 text-sm text-destructive">
+          Missing NEXT_PUBLIC_PRIVY_APP_ID. Credence now uses Privy as the
+          only app wallet, so this env var is required.
+        </div>
+      </ToastProvider>
+    );
+  }
 
   return (
     <PrivyProvider
@@ -47,12 +52,13 @@ export function Providers({ children }: { children: ReactNode }) {
             createOnLogin: "off",
           },
           solana: {
-            createOnLogin: "users-without-wallets",
+            createOnLogin: "all-users",
           },
         },
+        solanaClusters,
       }}
     >
-      <ToastProvider>{walletTree(true)}</ToastProvider>
+      <ToastProvider>{walletTree}</ToastProvider>
     </PrivyProvider>
   );
 }

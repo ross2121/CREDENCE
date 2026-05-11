@@ -12,12 +12,12 @@ import {
 } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSendTransaction, useSolanaWallets } from "@privy-io/react-auth/solana";
-import type { WalletContextState } from "@solana/wallet-adapter-react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/toast-provider";
 import { useBorrowerPolicy } from "@/hooks/use-borrower-policy";
+import type { AxiomWallet } from "@/hooks/use-privy-solana-wallet";
 import { AXIOM_DEVNET } from "@/lib/devnet-pool";
 import {
   buildFundRepaymentStreamWithPolicyTransaction,
@@ -69,7 +69,7 @@ export function PrivyRepaymentPanel({
   repaymentAmountUsdc: number;
   onActionState: (state: ActionState, message: string) => void;
   onRefresh: () => Promise<void>;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   const { authenticated, login, ready } = usePrivy();
   const { wallets, createWallet, ready: walletsReady } = useSolanaWallets();

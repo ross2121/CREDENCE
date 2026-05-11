@@ -11,7 +11,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SolanaWalletButton } from "@/components/solana-wallet-button";
+import { PrivyAuthButton } from "@/components/privy-auth-button";
 
 const nav = [
   { href: "/", label: "Home", icon: Home },
@@ -60,7 +60,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 );
               })}
             </nav>
-            <SolanaWalletButton />
+            <PrivyAuthButton />
           </div>
         </div>
       </header>

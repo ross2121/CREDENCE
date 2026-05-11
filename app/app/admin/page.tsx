@@ -2,16 +2,16 @@
 
 import { Activity, CircleDollarSign, Clock3, ShieldCheck } from "lucide-react";
 import { PublicKey } from "@solana/web3.js";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useConnection } from "@solana/wallet-adapter-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Metric } from "@/components/metric";
 import { StatusState } from "@/components/status-state";
-import { SolanaWalletButton } from "@/components/solana-wallet-button";
 import { useToast } from "@/components/toast-provider";
 import { useLivePool } from "@/hooks/use-live-pool";
+import { usePrivySolanaWallet } from "@/hooks/use-privy-solana-wallet";
 import {
   executeLiquidationFromWallet,
   issueLiquidationWarningFromWallet,
@@ -19,7 +19,7 @@ import {
 import { AXIOM_DEVNET } from "@/lib/devnet-pool";
 
 export default function AdminPage() {
-  const wallet = useWallet();
+  const wallet = usePrivySolanaWallet();
   const { connection } = useConnection();
   const { showTransactionToast } = useToast();
   const livePool = useLivePool();
@@ -110,7 +110,9 @@ export default function AdminPage() {
               label="Connected"
               value={isPoolAuthority ? "Authority" : "Restricted"}
             />
-            <SolanaWalletButton />
+            <Button onClick={wallet.connect} disabled={!wallet.ready}>
+              {wallet.connected ? "Privy connected" : "Connect Privy"}
+            </Button>
           </CardContent>
         </Card>
       </section>

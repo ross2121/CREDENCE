@@ -7,7 +7,6 @@ import {
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
-import type { WalletContextState } from "@solana/wallet-adapter-react";
 import { Buffer } from "buffer";
 import {
   deriveCollateralEscrow,
@@ -24,6 +23,7 @@ import {
   DEVNET_SILVER_PROOF_BASE64,
   DEVNET_SILVER_PUBLIC_INPUTS,
 } from "@/lib/zk-fixture";
+import type { AxiomWallet } from "@/hooks/use-privy-solana-wallet";
 
 const KVAULT_PROGRAM_ID = new PublicKey(
   "devkRngFnfp4gBc5a3LsadgbQKdPo8MSZ4prFiNSVmY"
@@ -184,7 +184,7 @@ function getLenderPosition(lender: PublicKey) {
 
 async function sendAndConfirm(
   connection: Connection,
-  wallet: WalletContextState,
+  wallet: AxiomWallet,
   transaction: Transaction
 ) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
@@ -235,7 +235,7 @@ export async function depositLiquidityFromWallet({
 }: {
   amountUsdc: number;
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -307,7 +307,7 @@ export async function withdrawLiquidityToWallet({
 }: {
   amountUsdc: number;
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -351,7 +351,7 @@ export async function registerFixtureCreditProof({
   wallet,
 }: {
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -415,7 +415,7 @@ export async function requestLoanFromWallet({
   durationDays: number;
   collateralUsdc: number;
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -484,7 +484,7 @@ export async function initializeBorrowerPrivyPolicyFromWallet({
   maxAmountUsdc: number;
   streamVault: PublicKey;
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -534,7 +534,7 @@ export async function mintReputationFromWallet({
   wallet,
 }: {
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -567,7 +567,7 @@ export async function disburseLoanFromWallet({
   borrower: PublicKey;
   loan: PublicKey;
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -610,7 +610,7 @@ export async function initRepaymentStreamFromWallet({
 }: {
   loan: PublicKey;
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -658,7 +658,7 @@ export async function fundRepaymentStreamFromWallet({
   loan: PublicKey;
   amountUsdc: number;
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -773,7 +773,7 @@ export async function claimRepaymentsToPoolFromWallet({
 }: {
   loan: PublicKey;
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -813,7 +813,7 @@ export async function closeRepaymentStreamFromWallet({
 }: {
   loan: PublicKey;
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -862,7 +862,7 @@ export async function issueLiquidationWarningFromWallet({
   collateralValueUsdc: number;
   loanValueUsdc: number;
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -900,7 +900,7 @@ export async function executeLiquidationFromWallet({
   borrower: PublicKey;
   loan: PublicKey;
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
@@ -946,7 +946,7 @@ export async function rebalanceToKaminoFromWallet({
 }: {
   amountUsdc: number;
   connection: Connection;
-  wallet: WalletContextState;
+  wallet: AxiomWallet;
 }) {
   if (!wallet.publicKey) throw new Error("Connect a wallet first");
 
