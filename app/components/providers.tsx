@@ -8,6 +8,7 @@ import {
 } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
+import { PrivyWalletSync } from "@/components/privy-wallet-sync";
 import { ToastProvider } from "@/components/toast-provider";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
@@ -18,15 +19,18 @@ export function Providers({ children }: { children: ReactNode }) {
   const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
   const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
 
-  const walletTree = (
+  const walletTree = (syncPrivy = false) => (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
-        <WalletModalProvider>{children}</WalletModalProvider>
+        <WalletModalProvider>
+          {syncPrivy ? <PrivyWalletSync /> : null}
+          {children}
+        </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
   );
 
-  if (!privyAppId) return <ToastProvider>{walletTree}</ToastProvider>;
+  if (!privyAppId) return <ToastProvider>{walletTree()}</ToastProvider>;
 
   return (
     <PrivyProvider
@@ -48,7 +52,7 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }}
     >
-      <ToastProvider>{walletTree}</ToastProvider>
+      <ToastProvider>{walletTree(true)}</ToastProvider>
     </PrivyProvider>
   );
 }
