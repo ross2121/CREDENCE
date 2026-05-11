@@ -63,7 +63,7 @@ export function Providers({ children }: { children: ReactNode }) {
             createOnLogin: "off",
           },
           solana: {
-            createOnLogin: "users-without-wallets",
+            createOnLogin: "off",
           },
         },
         solanaClusters,

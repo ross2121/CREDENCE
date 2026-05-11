@@ -2,10 +2,7 @@
 
 import { LogIn, LogOut } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
-import {
-  useConnectedStandardWallets,
-  useSolanaWallets,
-} from "@privy-io/react-auth/solana";
+import { useConnectedStandardWallets } from "@privy-io/react-auth/solana";
 import { Button } from "@/components/ui/button";
 
 function shortAddress(address: string) {
@@ -13,9 +10,8 @@ function shortAddress(address: string) {
 }
 
 export function PrivyAuthButton() {
-  const { authenticated, login, logout, ready, user } = usePrivy();
+  const { authenticated, login, logout, ready } = usePrivy();
   const { wallets: connectedWallets } = useConnectedStandardWallets();
-  const { wallets } = useSolanaWallets();
 
   if (!ready) {
     return (
@@ -43,8 +39,7 @@ export function PrivyAuthButton() {
     );
   }
 
-  const address =
-    connectedWallets[0]?.address ?? wallets[0]?.address ?? user?.wallet?.address;
+  const address = connectedWallets[0]?.address;
   const label = address ? `Switch ${shortAddress(address)}` : "Switch wallet";
 
   return (

@@ -29,12 +29,10 @@ export function usePrivySolanaWallet(): AxiomWallet {
   const {
     createWallet: createPrivyWallet,
     ready: walletsReady,
-    wallets,
   } = useSolanaWallets();
   const { signAndSendTransaction } = useStandardSignAndSendTransaction();
   const standardWallet = standardWallets[0] ?? null;
-  const embeddedWallet = wallets[0] ?? null;
-  const address = standardWallet?.address ?? embeddedWallet?.address ?? null;
+  const address = standardWallet?.address ?? null;
 
   return useMemo(
     () => ({
@@ -53,12 +51,10 @@ export function usePrivySolanaWallet(): AxiomWallet {
         transaction: Transaction,
         connection: Connection
       ) => {
-        if (!address || (!standardWallet && !embeddedWallet)) {
-          throw new Error("Connect Privy wallet first");
-        }
+        void connection;
 
-        if (embeddedWallet && embeddedWallet.address === address) {
-          return embeddedWallet.sendTransaction(transaction, connection);
+        if (!address || !standardWallet) {
+          throw new Error("Connect Privy wallet first");
         }
 
         const result = await signAndSendTransaction({
@@ -76,7 +72,6 @@ export function usePrivySolanaWallet(): AxiomWallet {
       address,
       authenticated,
       createPrivyWallet,
-      embeddedWallet,
       login,
       privyReady,
       signAndSendTransaction,
