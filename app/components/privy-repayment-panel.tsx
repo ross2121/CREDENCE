@@ -1,7 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
-import { KeyRound, Send, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Copy,
+  ExternalLink,
+  KeyRound,
+  RefreshCw,
+  Send,
+  ShieldCheck,
+  Wallet,
+} from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useSendTransaction, useSolanaWallets } from "@privy-io/react-auth/solana";
 import type { WalletContextState } from "@solana/wallet-adapter-react";
@@ -10,12 +18,35 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/toast-provider";
 import { useBorrowerPolicy } from "@/hooks/use-borrower-policy";
+import { AXIOM_DEVNET } from "@/lib/devnet-pool";
 import {
   buildFundRepaymentStreamWithPolicyTransaction,
   initializeBorrowerPrivyPolicyFromWallet,
 } from "@/lib/axiom-actions";
 
 type ActionState = "idle" | "loading" | "success" | "error";
+
+type AgentBalances = {
+  loading: boolean;
+  sol: number;
+  usdc: number;
+  error: string | null;
+};
+
+const TOKEN_PROGRAM_ID = new PublicKey(
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+);
+const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
+  "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+);
+
+function getAssociatedTokenAddress(mint: PublicKey, owner: PublicKey) {
+  const [address] = PublicKey.findProgramAddressSync(
+    [owner.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mint.toBuffer()],
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+  return address;
+}
 
 export function PrivyRepaymentPanel({
   connection,
@@ -43,7 +74,13 @@ export function PrivyRepaymentPanel({
   const { authenticated, login, ready } = usePrivy();
   const { wallets, createWallet, ready: walletsReady } = useSolanaWallets();
   const { sendTransaction } = useSendTransaction();
-  const { showTransactionToast } = useToast();
+  const { showToast, showTransactionToast } = useToast();
+  const [balances, setBalances] = useState<AgentBalances>({
+    loading: false,
+    sol: 0,
+    usdc: 0,
+    error: null,
+  });
   const delegatedWalletAddress = wallets[0]?.address ?? null;
   const delegatedWallet = useMemo(
     () => (delegatedWalletAddress ? new PublicKey(delegatedWalletAddress) : null),
@@ -66,6 +103,57 @@ export function PrivyRepaymentPanel({
     !!loanAddress &&
     repaymentAmountUsdc > 0 &&
     repaymentAmountUsdc <= policy.data.maxTransactionUsdc;
+
+  const refreshBalances = useCallback(async () => {
+    if (!delegatedWallet) {
+      setBalances({ loading: false, sol: 0, usdc: 0, error: null });
+      return;
+    }
+
+    setBalances((current) => ({ ...current, loading: true, error: null }));
+    try {
+      const agentUsdcAta = getAssociatedTokenAddress(
+        AXIOM_DEVNET.usdcMint,
+        delegatedWallet
+      );
+      const [lamports, usdcBalance] = await Promise.all([
+        connection.getBalance(delegatedWallet, "confirmed"),
+        connection
+          .getTokenAccountBalance(agentUsdcAta, "confirmed")
+          .catch(() => null),
+      ]);
+
+      setBalances({
+        loading: false,
+        sol: lamports / 1_000_000_000,
+        usdc: Number(usdcBalance?.value.uiAmount ?? 0),
+        error: null,
+      });
+    } catch (caught) {
+      setBalances({
+        loading: false,
+        sol: 0,
+        usdc: 0,
+        error:
+          caught instanceof Error
+            ? caught.message
+            : "Failed to load delegated wallet balances",
+      });
+    }
+  }, [connection, delegatedWallet]);
+
+  async function copyAgentAddress() {
+    if (!delegatedWalletAddress) return;
+    await navigator.clipboard.writeText(delegatedWalletAddress);
+    showToast({
+      title: "Agent address copied",
+      message: delegatedWalletAddress,
+    });
+  }
+
+  useEffect(() => {
+    void refreshBalances();
+  }, [refreshBalances]);
 
   async function preparePolicy() {
     if (!delegatedWallet || !streamVault) return;
@@ -124,7 +212,7 @@ export function PrivyRepaymentPanel({
           },
         },
       });
-      await Promise.all([policy.refresh(), onRefresh()]);
+      await Promise.all([policy.refresh(), onRefresh(), refreshBalances()]);
       onActionState(
         "success",
         `Confirmed ${receipt.signature.slice(0, 8)}...${receipt.signature.slice(-8)}`
@@ -174,6 +262,78 @@ export function PrivyRepaymentPanel({
           </Button>
         ) : (
           <>
+            <div className="rounded-md border border-border p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 gap-3">
+                  <Wallet className="mt-1 h-4 w-4 flex-none text-primary" />
+                  <div className="min-w-0">
+                    <p className="font-medium">Fund this agent wallet</p>
+                    <p className="mt-1 break-all text-sm text-muted-foreground">
+                      {delegatedWalletAddress}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    aria-label="Copy agent wallet address"
+                    className="h-9 w-9 p-0"
+                    onClick={() => void copyAgentAddress()}
+                    type="button"
+                    variant="outline"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    aria-label="Refresh agent wallet balances"
+                    className="h-9 w-9 p-0"
+                    onClick={() => void refreshBalances()}
+                    type="button"
+                    variant="outline"
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4 ${
+                        balances.loading ? "animate-spin" : ""
+                      }`}
+                    />
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <PolicyRow
+                  label="Agent SOL"
+                  value={`${balances.sol.toLocaleString(undefined, {
+                    maximumFractionDigits: 4,
+                  })} SOL`}
+                />
+                <PolicyRow
+                  label="Agent USDC"
+                  value={`$${balances.usdc.toLocaleString(undefined, {
+                    maximumFractionDigits: 6,
+                  })}`}
+                />
+              </div>
+              {balances.error ? (
+                <p className="mt-3 text-sm text-destructive">
+                  {balances.error}
+                </p>
+              ) : null}
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <a
+                  className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                  href={`https://explorer.solana.com/address/${delegatedWalletAddress}?cluster=devnet`}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  View on explorer
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Send devnet SOL for transaction fees and devnet USDC for
+                repayments to this address before using automated repayment.
+              </p>
+            </div>
+
             <div className="rounded-md border border-border bg-muted p-3 text-sm">
               <div className="grid gap-2 md:grid-cols-2">
                 <PolicyRow
