@@ -3,10 +3,12 @@
 import { useMemo } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import {
-  useSendTransaction,
+  useConnectedStandardWallets,
   useSolanaWallets,
+  useStandardSignAndSendTransaction,
 } from "@privy-io/react-auth/solana";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+import bs58 from "bs58";
 
 export type AxiomWallet = {
   connected: boolean;
@@ -22,21 +24,26 @@ export type AxiomWallet = {
 
 export function usePrivySolanaWallet(): AxiomWallet {
   const { authenticated, login, ready: privyReady } = usePrivy();
+  const { ready: standardWalletsReady, wallets: standardWallets } =
+    useConnectedStandardWallets();
   const {
     createWallet: createPrivyWallet,
     ready: walletsReady,
     wallets,
   } = useSolanaWallets();
-  const { sendTransaction } = useSendTransaction();
-  const address = wallets[0]?.address ?? null;
+  const { signAndSendTransaction } = useStandardSignAndSendTransaction();
+  const standardWallet = standardWallets[0] ?? null;
+  const embeddedWallet = wallets[0] ?? null;
+  const address = standardWallet?.address ?? embeddedWallet?.address ?? null;
 
   return useMemo(
     () => ({
       connected: authenticated && Boolean(address),
       publicKey: address ? new PublicKey(address) : null,
-      ready: privyReady && walletsReady,
+      ready: privyReady && walletsReady && standardWalletsReady,
       connect: () =>
         login({
+          loginMethods: ["wallet"],
           walletChainType: "solana-only",
         }),
       createWallet: async () => {
@@ -46,23 +53,36 @@ export function usePrivySolanaWallet(): AxiomWallet {
         transaction: Transaction,
         connection: Connection
       ) => {
-        if (!address) throw new Error("Connect Privy wallet first");
+        if (!address || (!standardWallet && !embeddedWallet)) {
+          throw new Error("Connect Privy wallet first");
+        }
 
-        const receipt = await sendTransaction({
-          transaction,
-          connection,
-          address,
-        });
-        return receipt.signature;
+        if (standardWallet) {
+          const result = await signAndSendTransaction({
+            transaction: transaction.serialize({
+              requireAllSignatures: false,
+              verifySignatures: false,
+            }),
+            wallet: standardWallet,
+            chain: "solana:devnet",
+          });
+          return bs58.encode(result.signature);
+        }
+
+        if (!embeddedWallet) throw new Error("Connect Privy wallet first");
+        return embeddedWallet.sendTransaction(transaction, connection);
       },
     }),
     [
       address,
       authenticated,
       createPrivyWallet,
+      embeddedWallet,
       login,
       privyReady,
-      sendTransaction,
+      signAndSendTransaction,
+      standardWallet,
+      standardWalletsReady,
       walletsReady,
     ]
   );

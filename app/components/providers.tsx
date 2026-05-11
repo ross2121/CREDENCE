@@ -2,6 +2,7 @@
 
 import { ReactNode, useMemo } from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
+import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
 import { ConnectionProvider } from "@solana/wallet-adapter-react";
 import { ToastProvider } from "@/components/toast-provider";
 
@@ -18,6 +19,10 @@ export function Providers({ children }: { children: ReactNode }) {
       },
     ],
     [endpoint]
+  );
+  const solanaConnectors = useMemo(
+    () => toSolanaWalletConnectors({ shouldAutoConnect: false }),
+    []
   );
 
   const walletTree = (
@@ -41,18 +46,24 @@ export function Providers({ children }: { children: ReactNode }) {
     <PrivyProvider
       appId={privyAppId}
       config={{
-        loginMethods: ["wallet", "email"],
+        loginMethods: ["wallet"],
         appearance: {
           theme: "light",
           accentColor: "#0f766e",
           walletChainType: "solana-only",
+          walletList: ["phantom", "backpack", "solflare"],
+        },
+        externalWallets: {
+          solana: {
+            connectors: solanaConnectors,
+          },
         },
         embeddedWallets: {
           ethereum: {
             createOnLogin: "off",
           },
           solana: {
-            createOnLogin: "all-users",
+            createOnLogin: "users-without-wallets",
           },
         },
         solanaClusters,
