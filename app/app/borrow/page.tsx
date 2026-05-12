@@ -26,6 +26,7 @@ import { StatusState } from "@/components/status-state";
 import { useBorrowerState } from "@/hooks/use-borrower-state";
 import { useLivePool } from "@/hooks/use-live-pool";
 import { usePrivySolanaWallet } from "@/hooks/use-privy-solana-wallet";
+import { deriveCreditProof, deriveLoan } from "@/lib/borrower-state";
 import {
   claimRepaymentsToPoolFromWallet,
   closeRepaymentStreamFromWallet,
@@ -70,15 +71,10 @@ export default function BorrowPage() {
   const [adminBorrowerAddress, setAdminBorrowerAddress] = useState("");
   const [liquidationCollateralValueUsdc, setLiquidationCollateralValueUsdc] =
     useState(0.05);
-  const [liquidationLoanValueUsdc, setLiquidationLoanValueUsdc] =
-    useState(0.1);
+  const [liquidationLoanValueUsdc, setLiquidationLoanValueUsdc] = useState(0.1);
   const borrowerState = useBorrowerState(publicKey);
   const livePool = useLivePool();
-  const {
-    credit,
-    loanRequest,
-    updateLoanRequest,
-  } = useAxiomStore(
+  const { credit, loanRequest, updateLoanRequest } = useAxiomStore(
     useShallow((state) => ({
       credit: state.credit,
       loanRequest: state.loanRequest,
@@ -89,8 +85,8 @@ export default function BorrowPage() {
   const liveLoan = borrowerState.data?.loan;
   const liveStream = borrowerState.data?.repaymentStream;
   const liveLiquidation = borrowerState.data?.liquidationState;
-  const effectiveTier =
-    (liveProof?.tier ?? credit.tier) as keyof typeof tierConfig;
+  const effectiveTier = (liveProof?.tier ??
+    credit.tier) as keyof typeof tierConfig;
   const effectiveTierConfig = tierConfig[effectiveTier];
   const derivedCollateralUsdt = Math.ceil(
     (loanRequest.principalUsdt * effectiveTierConfig.collateralBps) / 10_000
@@ -113,21 +109,15 @@ export default function BorrowPage() {
     status: liveLoan?.status ?? "None",
     disbursed: liveLoan?.disbursed ?? false,
     collateralUsdc: liveLoan?.collateralUsdc ?? 0,
-    outstandingPrincipalUsdt:
-      liveLoan?.outstandingPrincipalUsdc ??
-      0,
+    outstandingPrincipalUsdt: liveLoan?.outstandingPrincipalUsdc ?? 0,
   };
   const displayedStream = {
     healthBps: liveStream?.healthBps ?? 0,
     accruedUsdc: liveStream?.accruedUsdc ?? 0,
     claimableUsdc: liveStream?.claimableUsdc ?? 0,
     fundedUsdc: liveStream?.fundedUsdc ?? 0,
-    totalDueUsdc:
-      liveStream?.totalDueUsdc ??
-      0,
-    availableVaultUsdc:
-      liveStream?.availableVaultUsdc ??
-      0,
+    totalDueUsdc: liveStream?.totalDueUsdc ?? 0,
+    availableVaultUsdc: liveStream?.availableVaultUsdc ?? 0,
     streamVault: liveStream?.streamVault ?? "Not initialized",
     endDate: liveStream?.endDate ?? displayedLoan.dueDate,
     canClose: liveStream?.canClose ?? false,
@@ -156,7 +146,8 @@ export default function BorrowPage() {
     ? "error"
     : "success";
   const isPoolAuthority =
-    !!livePool.data?.authority && publicKey?.toBase58() === livePool.data.authority;
+    !!livePool.data?.authority &&
+    publicKey?.toBase58() === livePool.data.authority;
   const isBorrowerWallet =
     !!liveLoan?.borrower && publicKey?.toBase58() === liveLoan.borrower;
   const canDisburse =
@@ -207,6 +198,7 @@ export default function BorrowPage() {
     action:
       | "proof"
       | "loan"
+      | "agentDisburse"
       | "mintReputation"
       | "disburse"
       | "initStream"
@@ -216,17 +208,51 @@ export default function BorrowPage() {
       | "issueLiquidation"
       | "executeLiquidation"
   ) {
+    async function requestAgentDisbursement(loan: string, borrower: string) {
+      const response = await fetch("/api/agent/disburse-loan", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ loan, borrower }),
+      });
+      const result = (await response.json()) as {
+        signature?: string;
+        skipped?: boolean;
+        message?: string;
+        error?: string;
+      };
+      if (!response.ok) {
+        throw new Error(result.error ?? "Pool agent failed to approve loan");
+      }
+      if (result.skipped) {
+        return {
+          signature: null,
+          message: result.message ?? "Loan is already disbursed",
+        };
+      }
+      if (!result.signature) {
+        throw new Error("Pool agent did not return a transaction signature");
+      }
+      return { signature: result.signature, message: null };
+    }
+
     setActionState({
       status: "loading",
       message: {
-        proof: "Waiting for wallet approval to register the devnet credit proof.",
+        proof:
+          "Waiting for wallet approval to register the devnet credit proof.",
         loan: "Waiting for wallet approval to create the loan request.",
-        mintReputation: "Waiting for wallet approval to create reputation state.",
+        agentDisburse:
+          "Pool agent is checking policy and preparing loan disbursement.",
+        mintReputation:
+          "Waiting for wallet approval to create reputation state.",
         disburse: "Waiting for pool-authority approval to disburse the loan.",
-        initStream: "Waiting for borrower approval to initialize the stream vault.",
-        fundStream: "Waiting for borrower approval to fund the repayment stream.",
+        initStream:
+          "Waiting for borrower approval to initialize the stream vault.",
+        fundStream:
+          "Waiting for borrower approval to fund the repayment stream.",
         claimStream: "Waiting for pool-authority approval to claim repayments.",
-        closeStream: "Waiting for borrower approval to close the repaid stream.",
+        closeStream:
+          "Waiting for borrower approval to close the repaid stream.",
         issueLiquidation:
           "Waiting for pool-authority approval to issue liquidation warning.",
         executeLiquidation:
@@ -246,6 +272,32 @@ export default function BorrowPage() {
           connection,
           wallet,
         });
+        if (!publicKey) throw new Error("Connect a wallet first");
+        const agentResult = await requestAgentDisbursement(
+          deriveLoan(publicKey, deriveCreditProof(publicKey)).toBase58(),
+          publicKey.toBase58()
+        );
+        if (agentResult.signature) signature = agentResult.signature;
+      } else if (action === "agentDisburse") {
+        if (!liveLoan) {
+          throw new Error("No live loan found for agent approval");
+        }
+        const agentResult = await requestAgentDisbursement(
+          liveLoan.address,
+          liveLoan.borrower
+        );
+        if (agentResult.message) {
+          await Promise.all([borrowerState.refresh(), livePool.refresh()]);
+          setActionState({
+            status: "success",
+            message: agentResult.message,
+          });
+          return;
+        }
+        if (!agentResult.signature) {
+          throw new Error("Pool agent did not return a transaction signature");
+        }
+        signature = agentResult.signature;
       } else if (action === "mintReputation") {
         signature = await mintReputationFromWallet({ connection, wallet });
       } else if (action === "issueLiquidation") {
@@ -316,7 +368,9 @@ export default function BorrowPage() {
       setActionState({
         status: "error",
         message:
-          caught instanceof Error ? caught.message : "Borrower transaction failed",
+          caught instanceof Error
+            ? caught.message
+            : "Borrower transaction failed",
       });
     }
   }
@@ -444,7 +498,9 @@ export default function BorrowPage() {
             <Button
               className="w-full"
               disabled={
-                actionState.status === "loading" || !connected || Boolean(liveProof)
+                actionState.status === "loading" ||
+                !connected ||
+                Boolean(liveProof)
               }
               onClick={() => void runAction("proof")}
               variant="outline"
@@ -505,7 +561,8 @@ export default function BorrowPage() {
             </div>
             {requestedAmountExceedsTierLimit ? (
               <p className="text-sm text-destructive">
-                Requested amount is above this wallet&apos;s registered tier limit.
+                Requested amount is above this wallet&apos;s registered tier
+                limit.
               </p>
             ) : null}
             <Button
@@ -559,10 +616,10 @@ export default function BorrowPage() {
                   liveLoan?.collateralLiquidated
                     ? "Liquidated"
                     : liveLoan?.collateralReleased
-                      ? "Released"
-                      : liveLoan?.collateralEscrowed
-                        ? "Locked"
-                        : "Not locked"
+                    ? "Released"
+                    : liveLoan?.collateralEscrowed
+                    ? "Locked"
+                    : "Not locked"
                 }
               />
             </div>
@@ -589,8 +646,9 @@ export default function BorrowPage() {
             </Button>
             {!isPoolAuthority && liveLoan && !liveLoan.disbursed ? (
               <p className="text-sm text-muted-foreground">
-                Pool authority wallet is required to release principal from the
-                AXIOM pool.
+                The pool agent verifies and releases principal automatically
+                after a valid loan request. If the loan remains requested,
+                refresh after the agent transaction confirms.
               </p>
             ) : null}
           </CardContent>
@@ -625,10 +683,19 @@ export default function BorrowPage() {
             </div>
             <div className="rounded-md border border-border bg-muted p-3">
               <div className="grid gap-3 md:grid-cols-2">
-                <InfoRow label="Total due" value={`$${displayedStream.totalDueUsdc.toLocaleString()}`} />
+                <InfoRow
+                  label="Total due"
+                  value={`$${displayedStream.totalDueUsdc.toLocaleString()}`}
+                />
                 <InfoRow label="Stream ends" value={displayedStream.endDate} />
-                <InfoRow label="Vault balance" value={`$${displayedStream.availableVaultUsdc.toLocaleString()}`} />
-                <InfoRow label="Stream vault" value={displayedStream.streamVault} />
+                <InfoRow
+                  label="Vault balance"
+                  value={`$${displayedStream.availableVaultUsdc.toLocaleString()}`}
+                />
+                <InfoRow
+                  label="Stream vault"
+                  value={displayedStream.streamVault}
+                />
               </div>
             </div>
             <label className="space-y-2">
@@ -696,7 +763,11 @@ export default function BorrowPage() {
               <InfoPanel
                 icon={<Clock3 className="h-5 w-5" />}
                 label="Release"
-                value={displayedStream.canClose ? "Available" : displayedStream.endDate}
+                value={
+                  displayedStream.canClose
+                    ? "Available"
+                    : displayedStream.endDate
+                }
               />
               <InfoPanel
                 icon={<Activity className="h-5 w-5" />}
@@ -712,7 +783,9 @@ export default function BorrowPage() {
               <InfoPanel
                 icon={<CircleDollarSign className="h-5 w-5" />}
                 label="Recovered"
-                value={`$${(liveLiquidation?.recoveredUsdc ?? 0).toLocaleString()}`}
+                value={`$${(
+                  liveLiquidation?.recoveredUsdc ?? 0
+                ).toLocaleString()}`}
               />
             </div>
             <Button
@@ -743,7 +816,9 @@ export default function BorrowPage() {
               <span className="text-sm font-medium">Borrower address</span>
               <input
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                onChange={(event) => setAdminBorrowerAddress(event.target.value)}
+                onChange={(event) =>
+                  setAdminBorrowerAddress(event.target.value)
+                }
                 placeholder={liveLoan?.borrower ?? "Borrower wallet"}
                 value={adminBorrowerAddress}
               />
@@ -755,7 +830,9 @@ export default function BorrowPage() {
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   min={0.01}
                   onChange={(event) =>
-                    setLiquidationCollateralValueUsdc(Number(event.target.value))
+                    setLiquidationCollateralValueUsdc(
+                      Number(event.target.value)
+                    )
                   }
                   step="0.01"
                   type="number"
