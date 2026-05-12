@@ -4,7 +4,9 @@ import { join } from "path";
 import { PublicKey } from "@solana/web3.js";
 import { AxiomClient } from "../sdk/src";
 import {
+  ikaSolanaSigningDefaults,
   IkaDwalletClient,
+  normalizeIkaSeed,
   unauthorizedDestinationDemo,
 } from "../integrations/ika/src";
 
@@ -98,6 +100,23 @@ describe("Ika integration", () => {
 
     expect(() => unauthorizedDestinationDemo(ika)).to.throw(
       "Action destination is not allowed"
+    );
+  });
+
+  it("uses Ika's Ed25519 signing defaults for Solana dWallet flows", () => {
+    expect(ikaSolanaSigningDefaults()).to.deep.equal({
+      chain: "solana",
+      curve: "ED25519",
+      signatureAlgorithm: "EdDSA",
+      hash: "SHA512",
+    });
+  });
+
+  it("normalizes user-share seeds before passing them to the Ika SDK", () => {
+    const seed = normalizeIkaSeed("axiom-borrower-seed");
+
+    expect(Array.from(seed)).to.deep.equal(
+      Array.from(new TextEncoder().encode("axiom-borrower-seed"))
     );
   });
 });

@@ -12,3 +12,17 @@ app/node_modules
 app/tsconfig.tsbuildinfo
 api/dist
 api/node_modules
+
+# ZK private inputs and generated proving artifacts
+*.wtns
+*.zkey
+*.ptau
+*.r1cs
+*.sym
+*.proof.bin
+*.witness.json
+*.private.json
+*.input.json
+fixtures/zk/*.json
+!fixtures/zk/*.public.json
+build/zk/

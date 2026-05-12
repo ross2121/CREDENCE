@@ -87,9 +87,14 @@ const txs = privyPolicy.enforce(repaymentAction, () =>
 );
 ```
 
-## 3. Ika dWallets (Future Bridgeless Capital Markets)
+## 3. Ika dWallets (Bridgeless Capital Markets)
 
-Ika remains the intended decentralized MPC and bridgeless collateral layer. Public Solana CPI support is not currently wired in this repo because Ika's public docs do not provide a Solana devnet program ID, IDL, or CPI account layout. When that is available, AXIOM can replace or supplement the Privy signer-policy layer with Ika dWallet signing.
+Ika is AXIOM's decentralized MPC and bridgeless collateral layer. The repo now has two Ika pieces:
+
+- an on-chain Solana `ika_policy` account that stores the dWallet identity, allowlisted destinations, maximum amount, and cross-chain metadata
+- a TypeScript SDK adapter in `integrations/ika/src/sdk.ts` that initializes `@ika.xyz/sdk`, connects to Ika's Sui-coordinated network, and derives user-share key material for dWallet operations
+
+The current Superteam track docs list Solana support as pre-alpha. Until the public Solana signing objects are stable enough to replace the signer in the frontend, Privy remains the devnet demo signer and AXIOM enforces the same Ika-shaped policy constraints on-chain.
 
 **What it is**: A 2PC-MPC cryptographic protocol that splits signing authority between the user/agent and Ika's decentralized MPC network. Neither side can sign alone. Solana programs define policies that the MPC network enforces before completing any signature.
 
@@ -97,24 +102,38 @@ Ika remains the intended decentralized MPC and bridgeless collateral layer. Publ
 
 **AXIOM's dWallet usage:**
 
-### Creating a Borrower dWallet
+### Initializing Ika SDK State
 
 ```typescript
-import { IkaClient } from "@ika-xyz/sdk";
+import {
+  createIkaSdkClient,
+  createIkaUserShareKeys,
+  ikaSolanaSigningDefaults,
+} from "./integrations/ika/src";
 
-const ika = new IkaClient({ network: "mainnet" });
+const ika = await createIkaSdkClient({ network: "testnet" });
+const defaults = ikaSolanaSigningDefaults(); // Ed25519 + EdDSA + SHA512 for Solana
+const userShare = await createIkaUserShareKeys(
+  crypto.getRandomValues(new Uint8Array(32)),
+  defaults.curve
+);
+```
 
-// Create dWallet for the borrower's QVAC agent
-const dWallet = await ika.createDWallet({
-  policy: {
-    // Agent can ONLY send USDT to the repayment contract
-    allowedDestinations: [AXIOM_REPAYMENT_CONTRACT],
-    maxTransactionAmount: loanAmount,
-    tokenWhitelist: [USDT_MINT],
-    crossChain: false,
-  },
+### Creating a Borrower dWallet Policy
+
+```typescript
+import { IkaDwalletClient } from "./integrations/ika/src";
+
+const ikaPolicy = new IkaDwalletClient(axiom);
+
+const policy = ikaPolicy.borrowerPolicy({
   owner: borrowerPublicKey,
+  dwallet: ikaDWalletPublicKey,
+  repaymentDestination: AXIOM_REPAYMENT_STREAM,
+  maxTransactionAmount: loanAmount,
 });
+
+await ikaPolicy.initializePolicy(policy);
 ```
 
 ### Policy-Enforced Agent Signing
@@ -127,13 +146,17 @@ const tx = await buildRepaymentTransaction({
   dWallet: dWallet.address,
 });
 
-// Agent signs with its share
-const partialSig = await dWallet.sign(tx, agentKeypair);
-
-// Ika MPC network verifies policy, completes signature
-// If destination is NOT on the allowlist — signature NEVER completes
-const completedTx = await ika.completeSigning(partialSig);
-await sendAndConfirmTransaction(connection, completedTx);
+// AXIOM verifies the action against the Solana policy account.
+// The same policy envelope is the handoff point for Ika-completed signatures.
+ikaPolicy.enforce(
+  {
+    dwallet: ikaDWalletPublicKey,
+    destination: AXIOM_REPAYMENT_STREAM,
+    amount: weeklyRepayment,
+    description: "repay active loan",
+  },
+  () => axiom.fundRepaymentStream(weeklyRepayment)
+);
 ```
 
 ### Cross-Chain Collateral (BTC/ETH → Solana)
