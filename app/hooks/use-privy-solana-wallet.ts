@@ -22,21 +22,48 @@ export type AxiomWallet = {
   ) => Promise<string>;
 };
 
+function latestAuthenticatedSolanaAddress(
+  user: ReturnType<typeof usePrivy>["user"]
+) {
+  const solanaAccounts =
+    user?.linkedAccounts
+      .filter(
+        (account) =>
+          account.type === "wallet" &&
+          "address" in account &&
+          "chainType" in account &&
+          account.chainType === "solana" &&
+          account.walletClientType !== "privy"
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.latestVerifiedAt ?? b.firstVerifiedAt ?? 0).getTime() -
+          new Date(a.latestVerifiedAt ?? a.firstVerifiedAt ?? 0).getTime()
+      ) ?? [];
+
+  return (
+    (solanaAccounts[0] as { address: string } | undefined)?.address ?? null
+  );
+}
+
 export function usePrivySolanaWallet(): AxiomWallet {
-  const { authenticated, login, ready: privyReady } = usePrivy();
+  const { authenticated, login, ready: privyReady, user } = usePrivy();
   const { ready: standardWalletsReady, wallets: standardWallets } =
     useConnectedStandardWallets();
-  const {
-    createWallet: createPrivyWallet,
-    ready: walletsReady,
-  } = useSolanaWallets();
+  const { createWallet: createPrivyWallet, ready: walletsReady } =
+    useSolanaWallets();
   const { signAndSendTransaction } = useStandardSignAndSendTransaction();
-  const standardWallet = standardWallets[0] ?? null;
+  const authenticatedAddress = authenticated
+    ? latestAuthenticatedSolanaAddress(user)
+    : null;
+  const standardWallet =
+    standardWallets.find((wallet) => wallet.address === authenticatedAddress) ??
+    null;
   const address = standardWallet?.address ?? null;
 
   return useMemo(
     () => ({
-      connected: authenticated && Boolean(address),
+      connected: Boolean(address),
       publicKey: address ? new PublicKey(address) : null,
       ready: privyReady && walletsReady && standardWalletsReady,
       connect: () =>
@@ -77,6 +104,7 @@ export function usePrivySolanaWallet(): AxiomWallet {
       signAndSendTransaction,
       standardWallet,
       standardWalletsReady,
+      user,
       walletsReady,
     ]
   );

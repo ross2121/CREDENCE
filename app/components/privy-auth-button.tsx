@@ -10,7 +10,7 @@ function shortAddress(address: string) {
 }
 
 export function PrivyAuthButton() {
-  const { authenticated, login, logout, ready } = usePrivy();
+  const { authenticated, login, logout, ready, user } = usePrivy();
   const { wallets: connectedWallets } = useConnectedStandardWallets();
 
   if (!ready) {
@@ -39,13 +39,34 @@ export function PrivyAuthButton() {
     );
   }
 
-  const address = connectedWallets[0]?.address;
+  const activeSolanaAccount = user?.linkedAccounts
+    .filter(
+      (account) =>
+        account.type === "wallet" &&
+        "address" in account &&
+        "chainType" in account &&
+        account.chainType === "solana" &&
+        account.walletClientType !== "privy"
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.latestVerifiedAt ?? b.firstVerifiedAt ?? 0).getTime() -
+        new Date(a.latestVerifiedAt ?? a.firstVerifiedAt ?? 0).getTime()
+    )[0] as { address: string } | undefined;
+  const activeSolanaAddress = activeSolanaAccount?.address ?? null;
+  const address = connectedWallets.find(
+    (wallet) => wallet.address === activeSolanaAddress
+  )?.address;
   const label = address ? `Switch ${shortAddress(address)}` : "Switch wallet";
 
   return (
     <Button
       onClick={async () => {
-        await connectedWallets[0]?.disconnect();
+        await Promise.all(
+          connectedWallets.map((wallet) =>
+            wallet.disconnect().catch(() => null)
+          )
+        );
         await logout();
       }}
       title="Log out of Privy before switching wallet accounts"
